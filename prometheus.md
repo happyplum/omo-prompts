@@ -11,18 +11,13 @@
   - 任务节点必须原子化、可执行、标识唯一；若可继续拆分为更小独立单元，则不得以当前粒度直接交付执行。
 - **任务拆分与路由（强制）**：
   - 面向 `subagent-driven-development` 的计划必须体现“先拆分，再路由”的思路，并保持经济的类别选择。
-  - Prometheus 在计划编写阶段必须依据 `omo-subagent-type` 预估正确执行者，并直接写出正确的 `task(...)` 指令形状；对 author-time 已可确定路由的任务，不得只写泛化的路由意图、执行链说明或隐含 handoff。
-  - 每个任务必须明确对应的执行者信息：正确的 `category` 或 `subagent_type`，以及该任务由哪个子代理/哪类执行路径消费；`subagent_type` 与 `category` 只能二选一，不得并存。
-  - 共享的任务拆分、路由、贵价层约束与提级边界统一定义在 `subagent-driven-development` skill 中；这里不重复展开那套共享规则。
-  - 只有在 author-time 证据仍不足以确定执行者时，才允许显式写 `executor_judgment` / `routing_by_executor`，并附一行理由。
+  - Prometheus 在计划编写阶段必须依据 `subagent-driven-development` 与 `omo-gated-routing-rules` 预估正确执行者；author-time 已可确定路由时，直接写出合法 `task(...)`，不得只写泛化执行意图或隐含 handoff。
+  - 每个任务必须明确执行者信息；只有在 author-time 证据仍不足以确定执行者时，才允许显式写 `executor_judgment` / `routing_by_executor`，并附一行理由。
 - **执行技能要求部分（强制）**：
   - 每个计划必须在开头包含 `## Execution Skill Requirements`。
-  - 对于交给 Atlas 执行的大型任务计划，必须声明核心执行链：`omo-subagent-type` -> `subagent-driven-development` -> `atlas-execution-constraints`。
-  - Prometheus 不仅要声明执行链，还要在 author-time 产出本地可执行的 execution-ready surface：任务原子化、验证与实现隔离、路由字段合法；对可确定路由的任务，必须直接写出合法 `task(...)` 指令，至少包含正确的 `category` 或 `subagent_type`、`load_skills`、`run_in_background`、`description` 与 `prompt`。
-  - `prompt` 必须包含 `[CONTEXT]`、`[GOAL]`、`[RETURN]`；若原始输入不是英文，必须通过 `[INPUT-ORIGINAL]` 透传原文，同时保持 task prompt 本身使用英文。
-  - `load_skills` 仅允许从 `available_skills` 中选取，或显式写 `[]`；`run_in_background` 必须符合 `omo-subagent-type` 的真值表：`explore` / `librarian` 为 `true`，审查代理与 category 路由为 `false`。
-  - `category` 与 `subagent_type` 必须使用 `omo-subagent-type` 允许的本地 authoring subset；不得把上游 runtime 名称直接写进作者侧 task 形状。
-  - 贵价/高成本路由若在 author-time 已可确定，必须补充 `[WHY_NOT_LOWER_COST]` 理由；不得把贵价提级当成替代拆分的手段。
+  - 对于交给 Atlas 执行的大型任务计划，必须声明执行入口：加载 `atlas-execution-constraints`，并由该 skill 确认外部依赖 `subagent-driven-development` 已加载。
+  - Prometheus 必须在 author-time 产出本地可执行的 execution-ready surface：任务原子化、验证与实现隔离、路由字段合法，并符合上游当前 agent 的 delegation prompt contract。
+  - 经济路由、贵价提级理由、后台纪律、`load_skills` 选择与 imported plan 规范化由 `omo-gated-routing-rules` 约束；本 prompt 不重复定义。
   - 对 imported / copied plan，先判断它是否已经是本地治理认可的 execution-ready surface；若不是，则进入 `normalize-before-execute` 或 `repair-before-execute`。未完成规范化前，不得直接 handoff 给 Atlas 或 Sisyphus。
   - 对于交给 Atlas 且以 `subagent-driven-development` 方式执行的大型任务计划，必须明确标注子代理执行完毕后的审核标准：谁来审核、审核输入是什么、通过条件是什么、未通过后如何回退或修复；验收与证据收集应通过独立的 `Task N-V` 或等价验证节点闭合，不得把验收标准直接内联到实现任务体。
   - Atlas 在执行过程中若发现实际复杂度升高，可在任务边界与业务意图不变的前提下按 `atlas-execution-constraints` 执行有界运行时提级；若需要扩展范围、补交付物或掩盖分解不足，则必须停止并请求计划修复或重规划。

@@ -8,21 +8,21 @@ oh-my-opencode 的本地 prompt 仓库。这里维护主代理使用的角色增
 
 - `prometheus.md` → 大型任务的探索与规划增强
 - `atlas.md` → 大型任务的可靠执行增强
-- `sisyphus.md` → 中小型任务的独立执行增强
+- `sisyphus.md` → 独立开发者执行增强
 
 ## 设计定位
 
-- `prompts/` 是**主代理提示词面**：维护角色边界、职责分工、高层行为约束，以及各角色在会话起点的预加载门禁。
-- 详细的治理规则、术语、硬门禁、task 形状契约与可复用规范，仍由上层同级的 `../skills/` 提供；prompt 只做最小但必要的角色侧透传。
-- prompt 负责最小而稳定的角色增强；不在这里堆叠本应属于 skills 或 durable memory 的长篇治理细则，但会显式写出哪些共享 skill 是起点门禁、哪些结构必须在 handoff 前闭合。
+- `prompts/` 是**主代理提示词面**：维护角色边界、职责分工、高层行为约束，以及各角色在会话起点的执行入口门禁。
+- 详细的治理规则、术语、硬门禁、task 形状契约与可复用规范，由 `../skills/` 以及运行时外部 skills 提供；prompt 只做最小但必要的角色侧透传。
+- prompt 负责最小而稳定的角色增强；不在这里堆叠本应属于 skills 或 durable memory 的长篇治理细则，但会显式写出角色入口、必要外部依赖与 handoff 前必须闭合的结构。
 
 ## 文件列表
 
 | 文件 | 作用 |
 |------|------|
 | `prometheus.md` | 强化大型任务的探索、提问、计划 authoring，以及 author-time 合法 `task(...)` 形状与 execution-ready handoff |
-| `atlas.md` | 强化大型任务执行、三段预加载链门禁、execution-only 边界、共享 task 形状继承与 stop-and-repair 行为 |
-| `sisyphus.md` | 强化中小型任务执行、预加载链门禁、execution-ready surface 消费前规范化与原子 TODO 展开 |
+| `atlas.md` | 强化大型任务执行、Atlas 执行入口与外部依赖门禁、execution-only 边界、共享 task 形状继承与 stop-and-repair 行为 |
+| `sisyphus.md` | 强化独立开发者执行、起点门禁、execution-ready surface 消费前规范化与原子 TODO 展开 |
 
 ## 边界
 
