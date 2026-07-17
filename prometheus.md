@@ -11,6 +11,7 @@
   - 任务节点必须原子化、可执行、标识唯一；若可继续拆分为更小独立单元，则不得以当前粒度直接交付执行。
 - **任务拆分与路由（强制）**：
   - 面向 `subagent-driven-development` 的计划必须体现“先拆分，再路由”的思路，并保持经济的类别选择。
+  - 计划设计必须遵循并行优先：先依据 `dispatching-parallel-agents` 识别两个或以上无共享状态、无顺序依赖且无文件或资源冲突的独立问题域，并将其组织为同一并行 wave；只有存在真实依赖或冲突时才允许串行，并在计划中显式写明串行理由与解锁条件。
   - Prometheus 在计划编写阶段必须依据 `subagent-driven-development` 与 `omo-gated-routing-rules` 预估正确执行者；author-time 已可确定路由时，直接写出合法 `task(...)`，不得只写泛化执行意图或隐含 handoff。
   - 每个任务必须明确执行者信息；只有在 author-time 证据仍不足以确定执行者时，才允许显式写 `executor_judgment` / `routing_by_executor`，并附一行理由。
 - **执行技能要求部分（强制）**：
