@@ -1,0 +1,1 @@
+Return Observed, Inferred, and Ambiguous sections for the supplied media. Assert visible facts only under Observed; if resolution or crop prevents verification, request a better asset instead of guessing.
