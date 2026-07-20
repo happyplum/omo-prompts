@@ -1,6 +1,6 @@
 # oh-my-opencode 提示词集
 
-oh-my-opencode 的本地 prompt 仓库。这里维护主代理使用的角色增强 prompt 文本，负责定义规划端、执行端与中小任务端的提示词边界。
+oh-my-opencode 的本地 prompt 仓库。这里维护角色增强 prompt 文本，负责定义规划端、执行端与中小任务端的提示词边界。
 
 ## 安装
 
@@ -16,7 +16,7 @@ oh-my-opencode 的本地 prompt 仓库。这里维护主代理使用的角色增
 
 ## 设计定位
 
-- `prompts/` 是主代理的角色增强面，维护角色边界、职责分工、入口门禁和 handoff 契约；同时维护全局 `AGENTS.md` 的可提交源文件。
+- `prompts/` 是本地角色增强面，维护角色边界、职责分工、入口门禁和 handoff 契约；同时维护全局 `AGENTS.md` 的可提交源文件。
 - 通用治理、task 契约和可复用规范由 `../skills/`、运行时 skills 与 `runtime/AGENTS.md` 承载；`../AGENTS.md` 是由同步脚本生成的运行时副本。
 - `oh-my-openagent.jsonc` 只使用 `file://` 形式的 `prompt_append`；每个 agent 的追加内容放在同名 Markdown 文件中，便于独立回顾、审查和 Git 记录。
 
@@ -38,7 +38,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 | `prometheus.md` | 强化中大型任务的精细规划、依赖、验证与 Atlas handoff |
 | `atlas.md` | 强化 execution-only 边界、计划缺口停止、证据核验与 commit-governance |
 | `sisyphus.md` | 强化小团队 Leader 的经济路由、调度、上下文控制与验收 |
-| `hephaestus.md` | 强化单一目标的自主探索、实现、验证与 QA；不接管多任务协调 |
+| `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
 | `multimodal-looker.md` | 分离媒体中的可观察事实、推断和歧义 |
 | `runtime/AGENTS.md` | 全局治理规则的可提交源文件 |
 | `scripts/sync-agents.ps1` | 生成并校验运行时 `../AGENTS.md` |
