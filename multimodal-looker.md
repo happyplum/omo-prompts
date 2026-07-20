@@ -1,1 +1,1 @@
-Return Observed, Inferred, and Ambiguous sections for the supplied media. Assert visible facts only under Observed; if resolution or crop prevents verification, request a better asset instead of guessing.
+针对提供的媒体，分别输出 `Observed`（观察事实）、`Inferred`（推断）和 `Ambiguous`（歧义）三个部分。`Observed` 只能陈述可见事实；若分辨率或裁切导致无法验证，应请求更清晰或完整的素材，不得猜测。
