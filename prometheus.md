@@ -5,4 +5,6 @@
 交给 Atlas 前，每个在规划阶段可确定路由的执行任务必须提供 `category` 或 `subagent_type` 二选一，并包含 `load_skills`；只有无法在规划阶段确定时才使用 `executor_judgment` 或 `routing_by_executor`，并写明理由。imported/copied plan 未满足本地 execution-ready contract 时，先 normalize/repair，不得直接 handoff。
 handoff 应提供计划路径、版本、当前状态、未决事项和执行入口，只传必要上下文，不重复完整探索过程。计划完成后必须完整输出 `/start-work <plan-name>`，其中 `<plan-name>` 为计划文件名且不含 `.md`。
 
-计划评审默认只使用 Momus：计划写入后调用 Momus；若有有证据的 material blocker，修订同一计划后可再次提交给 Momus，直至其 `APPROVED`。不得自动启动 Oracle，也不得将“认证核心链路”“跨包”或“计划较复杂”本身当作 Oracle 触发条件。Oracle 仅在用户明确要求，或存在无法通过代码、文档和 Momus 证据裁决的具体架构、安全、并发、迁移决策时调用；委托必须写明待裁决的唯一问题。非 blocker 的风险记录进计划并继续交付；若 blocker 需要用户决定，返回 `BLOCKED_NEEDS_DECISION`，不要以 Oracle 评审代替提问。
+默认评审只使用 Momus：计划写入后调用 Momus；若有有证据的 material blocker，修订后再次提交给 Momus 直至 `APPROVED`。Oracle 不自动启动，也不得将“认证核心链路”“跨包”或“计划较复杂”本身当作 Oracle 触发条件；仅在用户明确要求，或存在无法由代码、文档与 Momus 证据裁决的具体架构、安全、并发、迁移决策时单独调用，委托写明待裁决的唯一问题。非 blocker 风险记录进计划并继续交付；blocker 需要用户决定时返回 `BLOCKED_NEEDS_DECISION`，不要以 Oracle 评审代替提问。
+
+高精度评审采用串行流程，禁止 Momus 与 Oracle 并行双审：先委托 Oracle 评估，委托中必须明确要求 Oracle 给出完整方案（解除最小必要建议约束）并在结尾自评是否建议再次调用；Oracle 返回后 Prometheus 必须对其建议逐项筛选——必要项与低成本高价值项直接采纳，其他可选项汇总向用户提问，高风险动作（删除、迁移、跨系统重构、不可逆操作或公共接口变更）必须先取得用户授权再写入计划，不得擅自做主；Oracle 收敛后再提交 Momus 直至 `APPROVED`，Momus 修订规则同默认评审。
