@@ -13,6 +13,7 @@ oh-my-opencode 的本地 prompt 仓库。这里维护角色增强 prompt 文本�
 - `multimodal-looker.md` → 观察、推断与歧义分离
 - `momus.md` → 证据驱动、可收敛复审的计划审核
 - `oracle.md` → 按需只读的架构与调试顾问
+- `metis.md` → Prometheus 之前的预规划意图分析
 - `runtime/AGENTS.md` → 全局治理规则的可提交源文件
 - `scripts/sync-agents.ps1` → 将 `runtime/AGENTS.md` 同步到运行时 `../AGENTS.md`
 
@@ -44,6 +45,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 | `multimodal-looker.md` | 分离媒体中的可观察事实、推断和歧义 |
 | `momus.md` | 默认计划审核；同范围复审直至有证据地通过 |
 | `oracle.md` | 按需只读顾问；默认只给达到目标的最小必要建议，不为完整或稳妥扩展范围 |
+| `metis.md` | 预规划意图分析；意图不明时强制提问，反揣测、反过度分析与过度开发 |
 | `runtime/AGENTS.md` | 全局治理规则的可提交源文件 |
 | `scripts/sync-agents.ps1` | 生成并校验运行时 `../AGENTS.md` |
 
