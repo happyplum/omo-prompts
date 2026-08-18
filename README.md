@@ -48,7 +48,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 
 | 文件 | 作用 |
 |------|------|
-| `prometheus.md` | 强化三类执行拓扑、并行许可门、集成 task、验收 checkpoint 与 workspace lane 契约 |
+| `prometheus.md` | 强化需求与目标记录、原子 task 与非原子举证、三类执行拓扑、并发矩阵、验收检查点与 workspace lane 契约 |
 | `atlas.md` | 强化 execution-only 边界、蜂群并行派发、触发式验收节奏、父级行为验收、preflight、工作路径传递、环境修复分离、压缩保留运行准则、集成裁决与有界终态 |
 | `sisyphus.md` | 强化小团队 Leader 的经济路由、调度、上下文控制与验收 |
 | `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
