@@ -29,7 +29,7 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 - 有向依赖使用 pipeline；共享核心不变量、未冻结接口、循环依赖或整体验收使用 single-owner。高耦合工作可并行只读调查，但保持单一设计、写入和集成 owner。
 - 环境或所有权检查可否决计划中的并行授权；冻结任务契约高于 reviewer 的扩展建议；可执行行为证据高于子代理自述；父协调者的集成裁决最高。
 - 普通低风险任务由父协调者运行确定性验收，不自动增加 reviewer；独立 reviewer 只用于公共/数据/权限/并发/迁移/不可逆边界、运行期 oracle 薄弱或多补丁组合风险。
-- Wave 是派发 epoch 而非验证屏障：当前只有计划已静态证明 workspace、所有权和各阶段资源 namespace 与所有活动 task 互斥的 task，才可在另一 task 验证期间滚动启动；反事实独立性只作规划说明，不单独授予派发权。未验证 WIP 3/4 上限与父级单槽验收构成有意背压。
+- Wave 是派发 epoch 而非验证屏障：当前只有计划已静态证明 workspace、所有权和各阶段资源 namespace 与所有活动 task 互斥的 task，才可在另一 task 验证期间滚动启动；反事实独立性只作规划说明，不单独授予派发权。并发预算口径为运行中写入 worker 与已完成未验收产物之和（3/4 上限），与父级单槽验收构成有意背压。
 - `INTEGRATE` 是本地状态；`integration task` 由唯一 `integration owner` 在 `integration workspace` 中执行，完成后进入官方 `Final Wave`。二者共同构成唯一全局收敛阶段，但不是同一对象。
 - Atlas 压缩上下文时优先结晶过时和已闭合 task 的过程记录，持续保留用户目标、核心准则、冻结契约、活动依赖、剩余预算、未闭合 blocker 与待消费证据。
 
