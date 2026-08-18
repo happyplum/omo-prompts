@@ -11,7 +11,7 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 - `sisyphus.md` → 小团队 Leader 的规划、调度与验收增强
 - `hephaestus.md` → 单目标自主深度编码增强
 - `multimodal-looker.md` → 观察、推断与歧义分离
-- `momus.md` → 证据驱动、可收敛复审的计划审核
+- `momus.md` → 证据驱动、原子化与并行路线校验、可收敛复审的计划审核
 - `oracle.md` → 按需只读的架构与调试顾问
 - `metis.md` → 预规划意图与执行期边界分析
 - `runtime/AGENTS.md` → 全局治理规则的可提交源文件
@@ -53,7 +53,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 | `sisyphus.md` | 强化小团队 Leader 的经济路由、调度、上下文控制与验收 |
 | `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
 | `multimodal-looker.md` | 分离媒体中的可观察事实、推断和歧义 |
-| `momus.md` | 审核计划拓扑、所有权、环境和验收的可执行性；仅以 material blocker 拒绝 |
+| `momus.md` | 审核计划拓扑、原子化拆分、并行路线、所有权、环境和验收；blocker 以可执行修订粒度输出 |
 | `oracle.md` | 按需提供阶段适配的架构与研究方案，抑制细枝末节和投机性安全冗余 |
 | `metis.md` | 规划前以有界头脑风暴分析意图；执行期在冻结契约内生成最小执行图 |
 | `runtime/AGENTS.md` | 全局治理规则的可提交源文件 |
