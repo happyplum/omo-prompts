@@ -48,12 +48,12 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 
 | 文件 | 作用 |
 |------|------|
-| `prometheus.md` | 强化需求与目标记录、原子 task 与非原子举证、三类执行拓扑、并发矩阵、验收检查点与 workspace lane 契约 |
-| `atlas.md` | 强化 execution-only 边界、蜂群并行派发、触发式验收节奏、父级行为验收、preflight、工作路径传递、环境修复分离、压缩保留运行准则、集成裁决与有界终态 |
+| `prometheus.md` | 强化需求与目标逐字溯源、原子 task 与非原子举证、三类执行拓扑、并发矩阵、验收检查点声明、线性审查流程与 workspace lane 契约 |
+| `atlas.md` | 强化 execution-only 边界、蜂群并行派发、触发式验收节奏、验收回执绑定 revision、父级行为验收、preflight、工作路径传递、环境修复分离、压缩保留运行准则、集成裁决与有界终态 |
 | `sisyphus.md` | 强化小团队 Leader 的经济路由、调度、上下文控制与验收 |
 | `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
 | `multimodal-looker.md` | 分离媒体中的可观察事实、推断和歧义 |
-| `momus.md` | 审核计划拓扑、原子化拆分、并行路线、所有权、环境和验收；blocker 以可执行修订粒度输出 |
+| `momus.md` | 审核计划拓扑、原子化拆分（含过拆与非原子密度）、并行路线与并发预算、所有权、环境和验收；blocker 以可执行修订粒度输出，REJECT 三轮后升级用户裁决 |
 | `oracle.md` | 按需提供阶段适配的架构与研究方案，抑制细枝末节和投机性安全冗余 |
 | `metis.md` | 规划前以有界头脑风暴分析意图；执行期在冻结契约内生成最小执行图 |
 | `runtime/AGENTS.md` | 全局治理规则的可提交源文件 |
