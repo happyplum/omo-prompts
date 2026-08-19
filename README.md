@@ -33,6 +33,11 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 - `INTEGRATE` 是本地状态；`integration task` 由唯一 `integration owner` 在 `integration workspace` 中执行，完成后进入官方 `Final Wave`。二者共同构成唯一全局收敛阶段，但不是同一对象。
 - Atlas 压缩上下文时优先结晶过时和已闭合 task 的过程记录，持续保留用户目标、核心准则、冻结契约、活动依赖、剩余预算、未闭合 blocker 与待消费证据。
 
+### 技术债
+
+- 上下文压缩的 100K token 水位目标无可观察的 token 信号，压缩时机依赖代理自估，属平台层缺口。
+- `vcs: none` 计划下 `ACCEPTED(revision)` 没有可靠的 revision 来源，版本 CAS 静默失效，只能以产物路径加 mtime 近似。
+
 ## 全局 AGENTS 同步
 
 修改全局治理规则时，先编辑 `runtime/AGENTS.md`，再运行同步脚本生成 OpenCode 实际加载的 `../AGENTS.md`：
@@ -49,11 +54,11 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 | 文件 | 作用 |
 |------|------|
 | `prometheus.md` | 强化需求与目标逐字溯源、原子 task 与非原子举证、三类执行拓扑、并发矩阵、验收检查点声明、线性审查流程与 workspace lane 契约 |
-| `atlas.md` | 强化 execution-only 边界、蜂群并行派发、触发式验收节奏、验收回执绑定 revision、父级行为验收、preflight、工作路径传递、环境修复分离、压缩保留运行准则、集成裁决与有界终态 |
+| `atlas.md` | 强化 execution-only 边界、蜂群并行派发、触发式验收节奏、验收回执绑定 revision、父级行为验收、preflight、工作路径传递、上下文胶囊时效校验与临时委托现场构造、温会话链计数与 reviewer 强制新会话、环境修复分离、压缩保留运行准则、集成裁决与有界终态（终态先 `/stop-continuation` 再报告） |
 | `sisyphus.md` | 强化小团队 Leader 的经济路由、调度、上下文控制与验收 |
 | `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
 | `multimodal-looker.md` | 分离媒体中的可观察事实、推断和歧义 |
-| `momus.md` | 审核计划拓扑、原子化拆分（含过拆与非原子密度）、并行路线与并发预算、所有权、环境和验收；blocker 以可执行修订粒度输出，REJECT 三轮后升级用户裁决 |
+| `momus.md` | 审核计划拓扑、原子化拆分（含过拆与非原子密度）、并行路线与并发预算、所有权、环境、验收与上下文胶囊断言抽查；blocker 以可执行修订粒度输出，REJECT 三轮后升级用户裁决 |
 | `oracle.md` | 按需提供阶段适配的架构与研究方案，抑制细枝末节和投机性安全冗余 |
 | `metis.md` | 规划前以有界头脑风暴分析意图；执行期在冻结契约内生成最小执行图 |
 | `runtime/AGENTS.md` | 全局治理规则的可提交源文件 |
