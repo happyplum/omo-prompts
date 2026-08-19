@@ -18,7 +18,7 @@ task 的原子单位遵循全局约定：一个可独立发布、回退与验收
 
 每个 workspace 的首个 task 验证并在必要时按计划身份创建环境。每个可提前确定路由的 task 写明 `category` 或 `subagent_type` 二选一及 `load_skills`；无法确定时标注带原因的 `executor_judgment`，且不得同时指定 `category`/`subagent_type`。该标记表示 Atlas 必须在 dispatch 前按 `omo-adaptive-execution` 解析并记录唯一最终路由及理由，不是空缺占位。handoff 只提供计划路径、版本、状态、未决事项与 `/start-work <plan-name>` 入口。非交互会话中用户消息已包含明确目标、范围与批准时，视为审批门已通过，计划写入完成即先调用 `/stop-continuation`，再交付并结束，不停留等待用户回复。
 
-计划审查线性进行：先由 oracle 审查，通过后再交 momus 复审；或仅 momus 单审；禁止两个 reviewer 并行审查同一计划版本。momus 只针对计划本身的缺陷与可执行性给出修订方向，不得借审查改变计划方向；方向变更只能来自用户。
+计划审查线性进行：先由 oracle 审查，或仅 momus 单审；禁止两个 reviewer 并行审查同一计划版本。oracle 阶段是内层循环——审计、按建议修订计划、再提交 oracle 复审，如此往复直至 oracle 通过；oracle 通过后才进入 momus 阶段，momus 的修订只需修订后重新提交 momus 直至 `APPROVED`，不得再回到 oracle 形成 oracle→momus→oracle 循环审计。momus 只针对计划本身的缺陷与可执行性给出修订方向，不得借审查改变计划方向；方向变更只能来自用户。
 
 计划同时面向两个消费者编写：momus 据此审查（需求与目标可追溯、原子化与并发矩阵可核对、非原子标注有举证），Atlas 据此执行（cohort、并发预算与检查点可直接消费，无需二次推导）；任一消费者无法直接使用的内容视为计划缺陷。
 
