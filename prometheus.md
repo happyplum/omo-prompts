@@ -16,7 +16,7 @@ task 的原子单位遵循全局约定：一个可独立发布、回退与验收
 
 对包含仓库写入的计划，顶层定义 `workspaces`，标注 `vcs: git | none` 和 `mode: current | worktree`，每个写入 task 引用唯一 `workspace_lane`。`mode: current` 必须记录 `authorization_source`，指向用户对使用当前工作区的明确授权；普通计划批准、工作区看似干净或规划者判断均不算授权，且保留现有分支。新建 worktree 时，单 lane 主 workspace 或多 lane integration workspace 使用 `<plan-name>--main` 与分支 `work/<plan-name>/main`；实施 lane 使用 `<plan-name>--<task-key>` 与分支 `work/<plan-name>/<task-key>`。存在多个写入 lane 时，必须增加唯一 integration task/workspace，依赖各 lane 的已验证产物，明确允许的汇合顺序，并只在集成树上运行最终验收与 Final Wave。
 
-每个 workspace 的首个 task 验证并在必要时按计划身份创建环境。每个可提前确定路由的 task 写明 `category` 或 `subagent_type` 二选一及 `load_skills`；无法确定时标注带原因的 `executor_judgment`，且不得同时指定 `category`/`subagent_type`。该标记表示 Atlas 必须在 dispatch 前按 `omo-adaptive-execution` 解析并记录唯一最终路由及理由，不是空缺占位。handoff 只提供计划路径、版本、状态、未决事项与 `/start-work <plan-name>` 入口。非交互会话中用户消息已包含明确目标、范围与批准时，视为审批门已通过，计划写入完成即交付并结束，不停留等待用户回复。
+每个 workspace 的首个 task 验证并在必要时按计划身份创建环境。每个可提前确定路由的 task 写明 `category` 或 `subagent_type` 二选一及 `load_skills`；无法确定时标注带原因的 `executor_judgment`，且不得同时指定 `category`/`subagent_type`。该标记表示 Atlas 必须在 dispatch 前按 `omo-adaptive-execution` 解析并记录唯一最终路由及理由，不是空缺占位。handoff 只提供计划路径、版本、状态、未决事项与 `/start-work <plan-name>` 入口。非交互会话中用户消息已包含明确目标、范围与批准时，视为审批门已通过，计划写入完成即先调用 `/stop-continuation`，再交付并结束，不停留等待用户回复。
 
 计划审查线性进行：先由 oracle 审查，通过后再交 momus 复审；或仅 momus 单审；禁止两个 reviewer 并行审查同一计划版本。momus 只针对计划本身的缺陷与可执行性给出修订方向，不得借审查改变计划方向；方向变更只能来自用户。
 
