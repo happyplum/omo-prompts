@@ -91,6 +91,36 @@
 - 决策：角色 prompt 只保留必要的准则、参考、约束与防漂移规则；禁止写入元声明、免责声明、兼容性声明及「本节只补充」「上游规则继续有效」等无行为约束力的表述。
 - 验收：全仓角色 prompt 无此类废话模式；新增或修改 prompt 时按此标准审查。
 
+### D-011 独立 ready 任务预算内同回合并发派发
+
+- 状态：`active`
+- 决策：每个 dispatch wave 开始时，按并发预算在同一回合 fan-out 独立 ready task；已派发的独立任务互不阻塞；任何 delegation 返回后完成该 task 的逐 task 验收与 checkbox 更新，才能补位派发新任务；依赖该产物的 task 仅在其 ACCEPTED 后可派发。单轮派发量 = min(ready set, 并发预算)。上游逐 task 验收节奏不变（S-002 边界不破）。
+- 验收：scorecard 显示后台派发率 >0；不存在「验证未完成即阻塞无依赖 ready task」的串行门；canary 执行初始预算 2。
+
+### D-012 冻结验收契约与复审分级
+
+- 状态：`active`
+- 决策：实施 task 携带冻结 acceptance_contract（条目含稳定 ID、二元条件、证据与证据作用域）；executor、reviewer、momus 注入同一份原文。首次复审与高风险门禁（公共接口、并发、迁移、安全）永远 INITIAL 全量；低风险增量复审仅在前置 INITIAL 全绿后启用。PASS carry-over 在证据作用域工具化（文件清单/diff 求交由脚本计算）前默认关闭。契约修订 append-only。
+- 验收：REJECT 的不变量必须已在冻结清单或触发契约修订；不存在由模型手算作用域交集产生的 PASS 携带。
+
+### D-013 计划可执行性前置门
+
+- 状态：`active`
+- 决策：计划进入审查前，baseline 验收命令由工具实际执行并记录 `revision/command/exit_code/disposition`，且 baseline 命令与最终验收命令同一；并发矩阵存在性、形状与可消费性由 plan-linter 脚本机械校验，linter 非零时 momus 以官方 [REJECT] 类别阻断。拓扑分层：单 writer 单 lane 的计划可写 `cohorts: none`；存在两个可同时 ready 的 write task、跨 lane、共享可变资源或高风险门禁时矩阵强制完整。
+- 验收：BLOCKED_BASELINE 类状态只由 linter/工具输出产生，不由模型自报；wave 1 前 Atlas 无条件重跑 baseline。
+
+### D-014 计划与执行账本物理分离
+
+- 状态：`active`
+- 决策：计划文档只含静态契约区块；checkbox、回执、尝试次数、review 结论等动态状态写入独立 append-only 执行账本（条目带 revision 锚），会话恢复 = 重放尾部，禁止原地编辑。主上下文只保留活动 cohort 的紧凑索引。
+- 验收：计划文件在执行期不因状态更新而膨胀；崩溃续走能从账本尾部重建状态。
+
+### D-015 治理改动必须可证伪
+
+- 状态：`active`
+- 决策：影响执行行为的治理改动（prompt、路由、门禁）落地时必须附带 scorecard 度量项与至少一个 canary 执行对照；分析会话标注 prompt 文件 hash 以支持归因。
+- 验收：改动前后各有可比较的同口径指标；无度量的治理改动不进入「已验证」状态。
+
 ## 已废弃决策
 
 ### S-001 本地优先级声明
