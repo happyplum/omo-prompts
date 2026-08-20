@@ -10,7 +10,6 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 - `atlas.md` → 大型任务的可靠执行增强
 - `sisyphus.md` → 小团队 Leader 的规划、调度与验收增强
 - `hephaestus.md` → 单目标自主深度编码增强
-- `multimodal-looker.md` → 观察、推断与歧义分离
 - `momus.md` → 证据驱动、原子化与并行路线校验、可收敛复审的计划审核
 - `oracle.md` → 按需只读的架构与调试顾问
 - `metis.md` → 预规划意图与执行期边界分析
@@ -25,20 +24,18 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 - 通用治理、task 契约和可复用规范由 `../skills/`、运行时 skills 与 `runtime/AGENTS.md` 承载；`../AGENTS.md` 是由同步脚本生成的运行时副本。
 - `~/.omo/omo.jsonc` 只使用 `file://` 形式的 `prompt_append`；每个 agent 的追加内容放在同名 Markdown 文件中，便于独立回顾、审查和 Git 记录。
 
-### 有界蜂群边界
+### 有界蜂群边界（索引）
 
-- 默认使用最低成本且胜任的单一 owner；只有任务能独立产出、失败和验收，写入互斥、环境隔离、接口冻结且存在真实关键路径收益时，才进入 parallel wave。
-- 有向依赖使用 pipeline；共享核心不变量、未冻结接口、循环依赖或整体验收使用 single-owner。高耦合工作可并行只读调查，但保持单一设计、写入和集成 owner。
-- 环境或所有权检查可否决计划中的并行授权；冻结任务契约约束 reviewer 的扩展建议；可执行行为证据优先于子代理自述；父协调者依据这些证据完成集成裁决。
-- 普通低风险任务由父协调者运行确定性验收，不自动增加 reviewer；独立 reviewer 只用于公共/数据/权限/并发/迁移/不可逆边界、运行期 oracle 薄弱或多补丁组合风险。
-- Wave 是派发 epoch 而非验证屏障：当前只有计划已静态证明 workspace、所有权和各阶段资源 namespace 与所有活动 task 互斥的 task，才可在另一 task 运行期间并行派发；task 返回后的补位派发以该返回 task 的逐 task 验证完成为门；反事实独立性只作规划说明，不单独授予派发权。并发预算口径为运行中写入 worker 与已完成未验收产物之和（3/4 上限），与父级单槽验收构成有意背压。
-- `INTEGRATE` 是本地状态；`integration task` 由唯一 `integration owner` 在 `integration workspace` 中执行，完成后进入官方 `Final Wave`。二者共同构成唯一全局收敛阶段，但不是同一对象。
-- Atlas 压缩上下文时优先结晶过时和已闭合 task 的过程记录，持续保留用户目标、核心准则、冻结契约、活动依赖、剩余预算、未闭合 blocker 与待消费证据。
+并发与蜂群的权威规则由 shared skills（`omo-adaptive-execution`）与 `atlas.md` 承载，此处只保留索引级边界事实：
+
+- 默认最低成本单一 owner；独立产出/失败/验收 + 写入互斥 + 环境隔离 + 接口冻结 + 真实关键路径收益才进 parallel wave；有向依赖用 pipeline，共享核心不变量、未冻结接口或整体验收用 single-owner。
+- Wave 是派发 epoch 而非验证屏障；并发预算口径（运行中写入 worker + 已完成未验收产物，默认 3、隔离充分至 4、计划 `concurrency_budget` 为唯一覆盖入口）与验收/reviewer 细则见 `atlas.md`。
+- `INTEGRATE` 是本地状态；`integration task` 由唯一 integration owner 在 integration workspace 中执行，完成后进入官方 `Final Wave`——二者共同构成唯一全局收敛阶段，但不是同一对象。
 
 ### 技术债
 
-- 上下文压缩的 100K token 水位目标无可观察的 token 信号，压缩时机依赖代理自估，属平台层缺口。
-- `vcs: none` 计划下 `ACCEPTED(revision)` 没有可靠的 revision 来源，版本 CAS 静默失效，只能以产物路径加 mtime 近似。
+- `tech-debt`：上下文压缩的 100K token 水位目标无可观察的 token 信号，压缩时机依赖代理自估，属平台层缺口。
+- `tech-debt`：`vcs: none` 计划下 `ACCEPTED(revision)` 没有可靠的 revision 来源，版本 CAS 静默失效，只能以产物路径加 mtime 近似。
 
 ## 全局 AGENTS 同步
 
@@ -59,7 +56,6 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 | `atlas.md` | 在上游逐 delegation 四阶段验证、checklist 与 checkbox 更新之上，补充 execution-only 边界、蜂群并行派发、revision 绑定、依赖/背压/checkpoint/终态附加门禁、工作区与集成裁决 |
 | `sisyphus.md` | 强化小团队 Leader 的经济路由、调度、上下文控制与验收 |
 | `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
-| `multimodal-looker.md` | 分离媒体中的可观察事实、推断和歧义 |
 | `momus.md` | 在官方 Reference Validation、Executability、Critical Blockers、QA Scenario Executability 四类审查内，使用原子化、拓扑、工作区和上下文胶囊作为证据判据；不新增 blocker 类别或本地复审上限 |
 | `oracle.md` | 按需提供阶段适配的架构与研究方案，抑制细枝末节和投机性安全冗余 |
 | `metis.md` | 规划前以有界头脑风暴分析意图；执行期在冻结契约内生成最小执行图 |
