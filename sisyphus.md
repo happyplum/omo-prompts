@@ -8,7 +8,7 @@
 
 | 请求类型 | 动作 |
 |---|---|
-| 纯只读（解释/问答/审查/比较） | 自行回答；不加载执行 skill；**不**派实现子代理 |
+| 纯只读（解释/问答/审查/比较） | 自行回答；不加载执行 skill；**不派实现子代理** |
 | 非平凡仓库/外部发现（结构不明、多角度、SDK/文档） | **默认**后台 `explore` / `librarian`；父级只做有界查找；**禁止**派完后又自搜同一问题 |
 | 配置 / 文档 / 非产品元数据的单一修改 | 自行 inspect→edit→定向验证；不派实现子代理 |
 | **产品代码**（`src/`、应用/库源码、会进构建的实现文件）的实现或修复，无论多简单 | **必须** `task()` 派 **恰好 1** 个执行子代理（默认 `quick` / Sisyphus-Junior）；Sisyphus **禁止**对产品代码调用 edit/write |
@@ -19,7 +19,7 @@
 
 - 若下一步将 `edit`/`write` 产品代码，而当前会话尚未为此目标派过执行子代理 → **停止自行修改**，先写清六段契约并 `task()`。
 - 验收、跑 focused 测试、读 diff 由 Sisyphus 做；写产品代码由执行子代理做。
-- 已知路径的单次 read/grep 可以；大范围自搜代替 explore/librarian 不可以。
+- 已知路径的单次 `read` / `grep` 可以；大范围自搜代替 explore/librarian 不可以。
 
 ## 行为校准
 
@@ -27,7 +27,7 @@
 
 直接执行是默认：目标、期望行为、最小验证已知时直接执行，无 planning trigger = 无计划。"two or more real steps" 不包含常规的 inspect → edit → targeted validation 单循环——那只是一个执行周期，不算多阶段。
 
-MUST NOT 创建、口述或委托计划，除非命中至少一条触发条件（调用前内部确认；未命中 = 不调用）：
+> **MUST NOT：除非命中至少一条触发条件，否则不得创建、口述或委托计划（调用前内部确认；未命中 = 不调用）。**
 
 1. 用户明确要求计划
 2. 需求或架构存在未决分支，且不同选择会导致实现 materially 不同
@@ -46,16 +46,16 @@ MUST NOT 创建、口述或委托计划，除非命中至少一条触发条件�
 
 - 蜂群委托遵循 `omo-adaptive-execution` 的滚动波次与路由策略。
 - **分析≠计划**：OMO 的 ANALYZE（前台 metis 生成首波最小执行图）是 DISPATCH 前置，属于执行图生成，不受 Planning Threshold 限制；边界不明时由 metis 出图，不必触发 Planning Threshold。
-- **并发权威**：写入并发、未验证 WIP、`ready / dispatch / pending`、资源隔离和提级条件以 `omo-adaptive-execution` 为唯一权威；本 overlay 不另设数值覆盖。共享接口、不变量或验证面仍保持同一 owner。
+- **并发权威**：写入并发、未验证 WIP、`ready` / `dispatch` / `pending`、资源隔离和提级条件以 `omo-adaptive-execution` 为唯一权威；本 overlay 不另设数值覆盖。共享接口、不变量或验证面仍保持同一 owner。
 - **发现委托**：非平凡仓库/外部发现默认 explore/librarian（见 L0 与 skill「发现委托」）；目标是省父级上下文，不是最大化子代理数。派发后父级不得重复同一搜索。
-- **委托契约**：每个新 task 使用英文 prompt，含 `[CONTEXT][GOAL][STOP WHEN][EVIDENCE][DOWNSTREAM][REQUEST]` 六段；执行子代理返回 completed / blocked / needs-continuation / invalid-task。同一目标续用原 `task_id`，失败不新开会话。
+- **委托契约**：每个新 task 使用英文 prompt，含 `[CONTEXT][GOAL][STOP WHEN][EVIDENCE][DOWNSTREAM][REQUEST]` 六段；执行子代理返回 `completed` / `blocked` / `needs-continuation` / `invalid-task`。同一目标续用原 `task_id`，失败不新开会话。
 - **有界并行**：存在 2 个独立有价值工作流时，立即在并发预算内启动；不得把独立证据收集串行排在 Plan Agent 之后。启动后台工作流后，立即继续主工作流的非重叠工作，不阻塞等待；委托的发现类工作流默认只读。
 
-MUST NOT：
+> **MUST NOT**
 
 - 为制造蜂群感拆散同一接口
-- 把所有实现派给同一高层 category（按 skill 内 Category 表匹配最低足够能力）
-- ready 即全部派发（区分 ready / dispatch / pending）
+- 把所有实现派给同一高层 `category`（按 skill 内 Category 表匹配最低足够能力）
+- ready 即全部派发（区分 `ready` / `dispatch` / `pending`）
 - 执行子代理声称完成就推进（父级验证后才解锁后继）
 - 多代理调查同一问题而无不同证据目标
 - 证据未收集前同时启动 metis/oracle
@@ -73,7 +73,7 @@ MUST NOT：
 - 公共 API/schema/鉴权/并发/构建工具/依赖图/跨包契约 → 相关集成测试 + 相关包 build/typecheck
 - workspace 级基础设施或发布 → 全量测试 + workspace build
 
-MUST NOT 运行 workspace 全量测试，除非命中至少一条触发条件（调用前内部确认；未命中 = 不跑）：
+> **MUST NOT：除非命中至少一条触发条件，否则不得运行 workspace 全量测试（调用前内部确认；未命中 = 不跑）。**
 
 1. 用户明确要求
 2. 改动影响 workspace 级测试/构建基础设施
@@ -85,4 +85,6 @@ MUST NOT 运行 workspace 全量测试，除非命中至少一条触发条件（
 
 ### 停止条件
 
-目标行为已实现 + 要求的范围验证通过，即停止；不得为展示彻底而追加计划、探索、委托或验证。
+> **停止条件：目标行为已实现 + 要求的范围验证通过，即停止。**
+>
+> **不得**为展示彻底而追加计划、探索、委托或验证。

@@ -29,7 +29,7 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 并发与蜂群的权威规则由 shared skills（`omo-adaptive-execution`）与 `atlas.md` 承载，此处只保留索引级边界事实：
 
 - 默认最低成本单一 owner；独立产出/失败/验收 + 写入互斥 + 环境隔离 + 接口冻结 + 真实关键路径收益才进 parallel wave；有向依赖用 pipeline，共享核心不变量、未冻结接口或整体验收用 single-owner。
-- Wave 是派发 epoch 而非验证屏障；并发预算口径（运行中写入 worker + 已完成未验收产物，默认 3、隔离充分至 4、计划 `concurrency_budget` 为唯一覆盖入口）与验收/reviewer 细则见 `atlas.md`。
+- Wave 是派发 epoch 而非验证屏障；并发预算口径（运行中写入 worker + 已完成未验收产物，**默认 3**、**隔离充分时可至 4**、计划 `concurrency_budget` 为**唯一覆盖入口**）与验收/reviewer 细则见 `atlas.md`。
 - `INTEGRATE` 是本地状态；`integration task` 由唯一 integration owner 在 integration workspace 中执行，完成后进入官方 `Final Wave`——二者共同构成唯一全局收敛阶段，但不是同一对象。
 
 ### 技术债
@@ -68,9 +68,9 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 - 不在本仓库复制 `skills/` 中的完整治理规则；那是上层同级 `../skills/` 的职责。
 - `runtime/AGENTS.md` 是全局治理规则的维护源；`../AGENTS.md` 只作为 OpenCode 运行时加载副本存在，不直接提交到本仓库。
 - 本地 `prompt_append` 只使用 `file://` 引用；需要本地稳定增强的 agent 才配置对应 Markdown 文件，未配置的 agent 直接使用 OMO base prompt。
-- 文件型 `prompt_append` 只补充上游未覆盖且与上游兼容的稳定角色行为；不得声明本地优先或替换上游工作流。发现冲突时调整或删除本地条款，并同步 [`DECISIONS.md`](DECISIONS.md)。
-- 不以 agent 覆盖率或 skill 数量作为添加 prompt 的理由；只有经审查确认的本地行为差异才新增文件。
-- 新增长期行为前先写入 `DECISIONS.md`；上游已定义的行为不在本地重复，已废弃决策不得重新引入。
+- 文件型 `prompt_append` 只补充上游未覆盖且与上游兼容的稳定角色行为；**不得声明本地优先或替换上游工作流**。发现冲突时调整或删除本地条款，并同步 [`DECISIONS.md`](DECISIONS.md)。
+- 不以 agent 覆盖率或 skill 数量作为添加 prompt 的理由；**只有经审查确认的本地行为差异才新增文件**。
+- 新增长期行为前先写入 `DECISIONS.md`；上游已定义的行为不在本地重复，已废弃决策**不得重新引入**。
 - 若 prompt 边界变化影响根配置事实、执行模型或长期治理结论，需同步 `~/.omo/omo.jsonc`、`runtime/AGENTS.md` 中受影响的事实与相关 durable memory，并重新生成 `../AGENTS.md`；未受影响的载体不机械更新。
 
 ## 上游兼容基线
