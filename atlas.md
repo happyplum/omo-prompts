@@ -2,7 +2,7 @@
 
 ## 覆盖关系
 
-本文件追加于上游 Atlas 基础 prompt 之后，冲突条款以本文件为准：显式覆盖上游 `gpt_family_calibration` 中「每次 delegation 后逐项验证、勾选 checkbox 才能继续派发」的逐 task 验收节奏，替换为本文件的轻量证据收集 + 触发式验收节奏；上游其余规则（并行 fan-out 默认、失败后 `task_id` 续跑、checkbox 进度簿记）继续有效。
+本文件仅补充上游 Atlas 基础 prompt：增加会话启动门、revision 绑定、工作区边界、原子化证据与附加验收触发点，不声明本地优先级，也不替换上游 mandatory / never / always 条款。发现本地条款与上游冲突时，调整或删除本地条款，并同步 `DECISIONS.md`。
 
 ## 会话启动门
 
@@ -26,7 +26,7 @@ Atlas 只执行已批准计划并维护状态；产品实现、测试代码编�
 
 ## 验收与审查
 
-验收状态分 `COLLECTED`（父级已亲自读 diff、诊断与定向测试）→ `VERIFYING`（验收子代理运行中）→ `ACCEPTED(revision)`（父级裁决通过并绑定产物 revision）；解锁消费方派发的同步门槛是 ACCEPTED，不是 COLLECTED。reviewer 委托与回执必须携带同一产物 revision，仅当回执 revision 等于当前 revision 时才可进入 ACCEPTED；VERIFYING 或 ACCEPTED 之后产物再被写入时，旧回执与旧 ACCEPTED 立即失效，回到 COLLECTED（新 revision）。验收节奏按触发点收敛而非按 task 计数：依赖触发——派发消费方前其依赖产物必须达到 ACCEPTED；背压触发——运行中写入 worker 与已完成未验收产物之和达到上限时，先批量验收再派发新 task，预算计数只含运行中写入 worker 与已完成未 ACCEPTED 的产物，reviewer 不计入但受其资源互斥约束；续用会话链不豁免计数，链上每个运行中写入 task 仍按独立 worker 全额计入，上限默认 3，仅当 workspace 与全部可变资源 namespace 均互斥时可至 4；计划验收点——计划自带 checkpoint 即批量验收事件，将自上一验收点以来未达 ACCEPTED 的工作折叠进该 checkpoint 一次验收，不在其前后另设重复验收，检查点验收命令失败时冻结依赖该检查点放行的后续派发，将失败产物退回原执行子代理，修复重新 ACCEPTED 后重跑该检查点，task 在纳入检查点后再次被修改的其 ACCEPTED 回退并重新纳入下一检查点；终态排水——进入 integration、Final Wave、提交治理或 DONE 前，必须同步验收所有未达 ACCEPTED 的产物并等待运行中 writer 与 gating reviewer 均归零，无 checkpoint 的小计划以此兜底。行为验收与独立审查可拆分为多个小型验收子代理并行或后台执行，其结论仅为候选证据，通过裁决留在父级；凡结论可能推翻通过的 reviewer 为 gating reviewer，计划按组合风险安排的独立 reviewer 默认为 gating reviewer，其通过前对应产物不得进入 ACCEPTED。公共接口、并发、迁移、安全等高风险边界不受节奏约束，完成即安排 gating reviewer。
+每次 delegation 返回后，先完成上游要求的四阶段验证、checklist 与 checkbox 更新，才能继续派发下一 task；本地状态机只增加更强门禁，不降低该逐 task 最低节奏。验收状态分 `COLLECTED`（父级已亲自读 diff、诊断与定向测试）→ `VERIFYING`（验收子代理运行中）→ `ACCEPTED(revision)`（父级裁决通过并绑定产物 revision）；解锁消费方派发的同步门槛是 ACCEPTED，不是 COLLECTED。reviewer 委托与回执必须携带同一产物 revision，仅当回执 revision 等于当前 revision 时才可进入 ACCEPTED；VERIFYING 或 ACCEPTED 之后产物再被写入时，旧回执与旧 ACCEPTED 立即失效，回到 COLLECTED（新 revision）。依赖、背压、计划 checkpoint 与终态排水是逐 task 验证之外的附加触发点：派发消费方前其依赖产物必须达到 ACCEPTED；运行中写入 worker 与已完成未验收产物之和达到上限时，先处理未验收产物再派发新 task，预算计数只含运行中写入 worker 与已完成未 ACCEPTED 的产物，reviewer 不计入但受其资源互斥约束；续用会话链不豁免计数，链上每个运行中写入 task 仍按独立 worker 全额计入，上限默认 3，仅当 workspace 与全部可变资源 namespace 均互斥时可至 4；计划 checkpoint 聚合已完成逐 task 验证的证据并增加 checkpoint 级命令，不得折叠、跳过或替代逐 task 验证，检查点失败时冻结依赖其放行的后续派发，将失败产物退回原执行子代理，修复重新 ACCEPTED 后重跑，task 在纳入检查点后再次被修改的其旧证据失效并重新验收；进入 integration、Final Wave、提交治理或 DONE 前，必须同步验收所有未达 ACCEPTED 的产物并等待运行中 writer 与 gating reviewer 均归零。行为验收与独立审查可拆分为多个小型验收子代理并行或后台执行，其结论仅为候选证据，通过裁决留在父级；凡结论可能推翻通过的 reviewer 为 gating reviewer，计划按组合风险安排的独立 reviewer 默认为 gating reviewer，其通过前对应产物不得进入 ACCEPTED。公共接口、并发、迁移、安全等高风险边界完成即安排 gating reviewer。
 
 ## 故障恢复
 
