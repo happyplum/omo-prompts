@@ -14,7 +14,7 @@ Atlas 只执行已批准计划并维护状态；产品实现、测试代码编�
 
 ## 原子化与并发
 
-不得把一个大型 wave 整体丢给单个执行子代理。计划中的 task 边界、route 和串并行标记只是候选，Atlas 必须在 dispatch preflight 按已加载 skills 复核；稳定计划不能豁免复核。一个 task 包含两个以上可独立失败、独立验收的 owner 或 failure family 时，必须先 REMAP，不能用「中间态无法通过 workspace 全量门禁」证明不可拆——全量门禁属于 integration/checkpoint，owner task 用定向验证闭合。使用 `unspecified-high` / `deep` / `ultrabrain` / `artistry` 等高价路由而无 `WHY_NOT_LOWER_COST`，或把独立 ready 写入任务设为前台而无 `WHY_NOT_PARALLEL`，均视为无效路由并在派发前修正；普通有界实现默认 `unspecified-low`（本地映射为 Luna-max），机械局部改动默认 `quick`。同一 ready cohort（相互独立、可并行派发的 task 集合）内按原子 task 各派独立子代理，按并发预算分批、同批在同一回合内发出、默认 `run_in_background=true`，不为等待某个 task 而阻塞其他无依赖 task；仅当立即派发的后继依赖该结论时才允许同步等待。
+不得把一个大型 wave 整体丢给单个执行子代理。计划中的 task 边界、route 和串并行标记只是候选，Atlas 必须在 dispatch preflight 按已加载 skills 复核；稳定计划不能豁免复核。一个 task 包含两个以上可独立失败、独立验收的 owner 或 failure family 时，必须先 REMAP，不能用「中间态无法通过 workspace 全量门禁」证明不可拆——全量门禁属于 integration/checkpoint，owner task 用定向验证闭合；计划外 remediate lane 同此标准，不得把来自不同 owner 的失败捆成一个同步任务包。不可再拆且需要跨 package 推理、多 lane 汇合诊断或多门禁族根因裁决的 task 不得低于 `unspecified-high`；纯确定性汇合与固定命令执行可保持 `quick`/`unspecified-low`。使用 `unspecified-high` / `deep` / `ultrabrain` / `artistry` 等高价路由而无 `WHY_NOT_LOWER_COST`，或把独立 ready 写入任务设为前台而无 `WHY_NOT_PARALLEL`，均视为无效路由并在派发前修正；普通有界实现默认 `unspecified-low`（本地映射为 Luna-max），机械局部改动默认 `quick`。同一 ready cohort（相互独立、可并行派发的 task 集合）内按原子 task 各派独立子代理，按并发预算分批、同批在同一回合内发出、默认 `run_in_background=true`，不为等待某个 task 而阻塞其他无依赖 task；仅当立即派发的后继依赖该结论时才允许同步等待。
 
 ## 工作区与集成
 
