@@ -1,23 +1,28 @@
 #!/usr/bin/env node
 /**
- * plan-linter.mjs — 计划可执行性前置门（C3/C4 的工具化执行臂，D-013）
+ * plan-linter.mjs v2 — 计划可执行性前置门（C3/C4 工具化执行臂，D-013/D-017）
  *
- * 用法（只读 lint；baseline 会实际执行验收命令）：
- *   node plan-linter.mjs lint <plan.md>                 结构校验：必备静态区块、并发矩阵 fail-closed、baseline 命令同一性
- *   node plan-linter.mjs baseline <plan.md> [--workspace <dir>]   从 Baseline Gate 区块提取验收命令并实跑，输出 exit code
+ * 用法：
+ *   node plan-linter.mjs lint <plan.md>                          结构校验（fail-closed）
+ *   node plan-linter.mjs baseline <plan.md> [--workspace <dir>]  实跑 Baseline Gate 命令并透传 exit code
  *
- * 计划格式 v2（静态区块约定，与 prompts/prometheus.md 计划契约同源）：
- *   ## 需求与目标 / ## Baseline Gate / ## Workspaces / ## 并发矩阵 / ## Task 契约 / ## 检查点与集成
- *   - Baseline Gate 内含一个 ```bash fenced 块，首行注释为 # workspace: <dir>（可选），其后为验收命令；该命令必须与「检查点与集成」中的终态验收命令逐字同一（忽略空白差异）。
- *   - 并发矩阵为表格：| task | cohort | 硬前驱 | 互斥资源 | lane | route |；每个 ## Task 契约 下的 ### task 标题必须恰好出现一次；硬前驱必须引用已知 task。
- *   - 拓扑豁免（D-013）：单 writer 单 lane（契约中仅 1 个 task）可写一行 `cohorts: none` 代替表格。
- *   - 动态状态（checkbox、回执、尝试次数）不得出现在计划文件，归 <plan>.ledger.md（append-only，D-014）；lint 对计划正文中的进度表/状态表给出 warning。
+ * lint 检查项（与 prompts/prometheus.md 计划契约同源，新增 mandate 必须同步此处）：
+ *   1. 六区块存在性：需求与目标 / Baseline Gate / Workspaces / 并发矩阵 / Task 契约 / 检查点与集成
+ *   2. 六区块排他性：出现任何无法映射到六区块的 ## 二级区块即 FAIL（修订记录等动态内容归 ledger，D-014/D-017）
+ *   3. Baseline Gate：fenced 命令块 + 证据四字段（revision / exit_code / disposition；command 即块本身）；
+ *      命令与「检查点与集成」的 fenced 终态验收命令规范化后双向相等（Goodhart 防线）
+ *   4. 并发矩阵：表头须含 task|cohort|硬前驱|lane|route 列；每个 ### task 恰好出现一次（精确规范化匹配，
+ *      不做子串模糊匹配）；硬前驱可解析且无环；未声明矩阵时仅接受 `cohorts: none` 且全部 task 同属单一
+ *      workspace_lane（D-017：按 lane 判定，不按 task 数）
+ *   5. Task 契约：每个 ### task 块须含 acceptance_contract，且至少含 条件/证据/证据作用域 标记
+ *   6. 动态状态泄漏：真实 checkbox 语法 `- [ ]`/`- [x]` 出现在正文即 FAIL（D-014）
  *
- * 退出码：0 = 通过；1 = 结构违例（Momus 以官方 [REJECT] + Executability blocker 表达，linter 不发明 verdict token）；2 = 用法/IO 错误。
- * baseline 子命令的退出码 = 被测命令的退出码（透传），并在 stdout 末行打印机器可读摘要：BASELINE_EXIT=<n> CMD=<cmd>。
+ * 退出码：0 = 通过；1 = 结构违例（momus 以官方 [REJECT] + Executability blocker 表达）；2 = 用法/IO 错误。
+ * baseline 子命令：lint 存在结构错误时拒绝运行（exit 2）；否则用系统 shell 原样执行 fenced 块全文
+ * （不做 && 重写），流式透传输出，退出码 = 被测命令退出码，末行打印 BASELINE_EXIT=<n> CMD=<cmd>。
  */
 import { readFileSync } from 'node:fs'
-import { execSync } from 'node:child_process'
+import { spawn } from 'node:child_process'
 
 const [, , sub, planPath, ...rest] = process.argv
 if (!['lint', 'baseline'].includes(sub) || !planPath) {
@@ -51,123 +56,209 @@ for (const line of text.split(/\r?\n/)) {
     sections.get(current)?.push(line)
   }
 }
-const findSection = (...aliases) => {
-  for (const [name, lines] of sections) {
-    const n = norm(name).toLowerCase()
-    if (aliases.some((a) => n.includes(a))) return { name, body: lines.join('\n') }
+
+const CANON = [
+  ['需求与目标', ['需求与目标', 'goal']],
+  ['Baseline Gate', ['baseline']],
+  ['Workspaces', ['workspace']],
+  ['并发矩阵', ['并发矩阵', 'cohort']],
+  ['Task 契约', ['task 契约', 'task契约', '契约']],
+  ['检查点与集成', ['检查点', '集成', 'checkpoint']],
+]
+const canonicalOf = (name) => {
+  const n = norm(name).toLowerCase()
+  for (const [canon, aliases] of CANON) {
+    if (aliases.some((a) => n.includes(a))) return canon
   }
   return null
 }
 
-const secGoal = findSection('需求与目标', 'goal')
-const secBaseline = findSection('baseline')
-const secWorkspaces = findSection('workspace')
-const secMatrix = findSection('并发矩阵', 'cohort')
-const secContracts = findSection('task 契约', '契约')
-const secCheckpoints = findSection('检查点', '集成', 'checkpoint')
-
-for (const [sec, label] of [[secGoal, '需求与目标'], [secBaseline, 'Baseline Gate'], [secWorkspaces, 'Workspaces'], [secMatrix, '并发矩阵'], [secContracts, 'Task 契约'], [secCheckpoints, '检查点与集成']]) {
-  if (!sec) errors.push(`缺少必备静态区块: ${label}`)
+const found = new Map()
+for (const [name, lines] of sections) {
+  if (name === '_preamble') continue
+  const canon = canonicalOf(name)
+  if (!canon) {
+    errors.push(`未声明的二级区块「${name}」——计划正文严格只含六区块，修订记录/动态状态归 ledger（D-014/D-017）`)
+  } else if (found.has(canon)) {
+    errors.push(`区块「${canon}」出现多次（「${found.get(canon).name}」与「${name}」）`)
+  } else {
+    found.set(canon, { name, body: lines.join('\n') })
+  }
+}
+for (const [canon] of CANON) {
+  if (!found.has(canon)) errors.push(`缺少必备静态区块: ${canon}`)
 }
 
-// ---- Baseline Gate：fenced bash 命令提取 ----
-let baselineCmd = null
+const secBaseline = found.get('Baseline Gate')
+const secMatrix = found.get('并发矩阵')
+const secContracts = found.get('Task 契约')
+const secCheckpoints = found.get('检查点与集成')
+
+const extractFence = (body) => {
+  const m = body.match(/```(?:bash|sh|powershell|pwsh)?\s*\n([\s\S]*?)```/)
+  return m ? m[1] : null
+}
+
+// ---- Baseline Gate：fenced 命令 + 证据四字段 ----
+let baselineScript = null
 let baselineWs = wsOverride
 if (secBaseline) {
-  const fence = secBaseline.body.match(/```(?:bash|sh|powershell|pwsh)?\s*\n([\s\S]*?)```/)
+  const fence = extractFence(secBaseline.body)
   if (!fence) {
     errors.push('Baseline Gate 区块内未找到 fenced 命令块')
   } else {
-    const lines = fence[1].split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
-    const wsLine = lines.find((l) => l.startsWith('# workspace:'))
-    if (wsLine && !baselineWs) baselineWs = wsLine.slice('# workspace:'.length).trim()
-    baselineCmd = lines.filter((l) => !l.startsWith('#')).join(' && ')
-    if (!baselineCmd) errors.push('Baseline Gate fenced 块内无实际命令')
+    const lines = fence.split(/\r?\n/).map((l) => l.trimEnd()).filter((l) => l.trim())
+    const wsLine = lines.find((l) => l.trim().startsWith('# workspace:'))
+    if (wsLine && !baselineWs) baselineWs = wsLine.split(':').slice(1).join(':').trim()
+    baselineScript = lines.filter((l) => !l.trim().startsWith('#')).join('\n')
+    if (!baselineScript.trim()) errors.push('Baseline Gate fenced 块内无实际命令')
+  }
+  for (const [field, re] of [['revision', /revision/i], ['exit_code', /exit[_ ]?code|退出码/i], ['disposition', /disposition|处置/i]]) {
+    if (!re.test(secBaseline.body)) errors.push(`Baseline Gate 缺少证据字段: ${field}（D-013：工具实跑后记录四字段，非模型自报）`)
   }
 }
 
-// ---- 命令同一性：Baseline Gate 命令必须逐字出现在 检查点与集成 ----
-if (baselineCmd && secCheckpoints && !norm(secCheckpoints.body).includes(norm(baselineCmd))) {
-  errors.push('Baseline Gate 命令与 检查点与集成 的终态验收命令不同一（Goodhart 防线：baseline 必须实跑最终验收命令本身）')
+// ---- 命令同一性：双向规范化相等 ----
+if (baselineScript && secCheckpoints) {
+  const cpFence = extractFence(secCheckpoints.body)
+  if (!cpFence) {
+    errors.push('检查点与集成 区块缺少 fenced 终态验收命令块，无法核对与 Baseline Gate 的同一性')
+  } else if (norm(cpFence) !== norm(baselineScript)) {
+    errors.push('Baseline Gate 命令与 检查点与集成 的终态验收命令不同一（双向规范化比较，Goodhart 防线）')
+  }
 }
 
-// ---- 并发矩阵 fail-closed ----
-const taskTitles = []
+// ---- Task 契约：### task 块 + acceptance_contract 结构 ----
+const taskBlocks = []
 if (secContracts) {
+  let cur = null
   for (const l of secContracts.body.split(/\r?\n/)) {
     const m = l.match(/^###\s+(.+?)\s*$/)
-    if (m) taskTitles.push(norm(m[1]))
+    if (m) {
+      cur = { title: norm(m[1]), body: [] }
+      taskBlocks.push(cur)
+    } else if (cur) cur.body.push(l)
   }
-}
-if (secMatrix) {
-  const body = secMatrix.body
-  if (/cohorts\s*:\s*none/i.test(body)) {
-    if (taskTitles.length > 1) errors.push(`拓扑豁免失效: cohorts: none 但 Task 契约含 ${taskTitles.length} 个 task（仅单 writer 单 lane 可豁免，D-013）`)
-  } else {
-    const rows = body.split(/\r?\n/).filter((l) => /^\s*\|/.test(l) && !/^\s*\|[\s\-|]+\|$/.test(l) && !/task\s*\|\s*cohort/i.test(l))
-    if (!rows.length) {
-      errors.push('并发矩阵区块存在但无表格行（且未声明 cohorts: none）')
+  for (const t of taskBlocks) {
+    const b = t.body.join('\n')
+    if (!/acceptance_contract/i.test(b)) {
+      errors.push(`Task「${t.title}」缺少 acceptance_contract（D-012 冻结验收契约）`)
     } else {
-      const seen = new Map()
-      const refs = new Set()
-      for (const row of rows) {
-        const cells = row.split('|').map((c) => c.trim()).filter((_, i, a) => i > 0 && i < a.length - 1)
-        const [task, , deps] = cells
-        if (!task) { errors.push(`矩阵行缺少 task 列: ${row.trim()}`); continue }
-        seen.set(norm(task), (seen.get(norm(task)) || 0) + 1)
-        if (deps && !/^(无|none|-)$/i.test(deps)) deps.split(/[,，]/).forEach((d) => { refs.add(norm(d)) })
-      }
-      for (const t of taskTitles) {
-        if (![...seen.keys()].some((k) => k.includes(t) || t.includes(k))) errors.push(`Task 契约「${t}」未出现在并发矩阵`)
-      }
-      for (const [t, n] of seen) if (n > 1) errors.push(`task「${t}」在矩阵中出现 ${n} 次（必须恰好一次）`)
-      for (const r of refs) {
-        if (![...seen.keys()].some((k) => k.includes(r) || r.includes(k)) && !taskTitles.some((t) => t.includes(r) || r.includes(t))) {
-          errors.push(`硬前驱「${r}」无法解析到任何已知 task`)
-        }
+      for (const [label, re] of [['条件', /条件|condition/i], ['证据', /证据|evidence/i], ['证据作用域', /证据作用域|evidence_scope/i]]) {
+        if (!re.test(b)) errors.push(`Task「${t.title}」acceptance_contract 条目缺少「${label}」标记`)
       }
     }
   }
 }
 
-// ---- 动态状态泄漏检查（D-014）----
-if (/checkbox|尝试次数|回执|进度表|状态:\s*(in-progress|done|blocked)/i.test(text)) {
-  warnings.push('计划正文疑似含动态状态（checkbox/回执/尝试次数）——应移至 append-only ledger 文件（D-014）')
+// ---- 并发矩阵 fail-closed ----
+if (secMatrix) {
+  const body = secMatrix.body
+  if (/cohorts\s*:\s*none/i.test(body)) {
+    const lanes = new Set()
+    if (secContracts) {
+      for (const m of secContracts.body.matchAll(/workspace_lane[:：]\s*`?([\w\-./\\]+)`?/g)) lanes.add(m[1])
+    }
+    if (lanes.size > 1) {
+      errors.push(`拓扑豁免失效: cohorts: none 但 Task 契约引用 ${lanes.size} 个不同 lane（${[...lanes].join(', ')}）——豁免按单 writer 单 lane 判定（D-017）`)
+    }
+    if (taskBlocks.length > 1) warnings.push(`cohorts: none 且含 ${taskBlocks.length} 个串行 task：确认同属单一 writer（D-017 允许，人工复核 writer 唯一性）`)
+  } else {
+    const tableLines = body.split(/\r?\n/).filter((l) => /^\s*\|/.test(l))
+    const dataRows = tableLines.filter((l) => !/^\s*\|[\s\-|]+\|$/.test(l))
+    const header = dataRows.shift()
+    if (!header) {
+      errors.push('并发矩阵区块存在但无表格（且未声明 cohorts: none）')
+    } else {
+      const hcells = header.split('|').map((c) => c.trim().toLowerCase())
+      for (const [label, re] of [['task', /task|任务/], ['cohort', /cohort/], ['硬前驱', /前驱|deps/], ['lane', /lane/], ['route', /route/]]) {
+        if (!hcells.some((c) => re.test(c))) errors.push(`并发矩阵表头缺少列: ${label}`)
+      }
+      if (!dataRows.length) errors.push('并发矩阵有表头但无数据行')
+      const seen = new Map()
+      const edges = []
+      for (const row of dataRows) {
+        const cells = row.split('|').map((c) => c.trim()).filter((_, i, a) => i > 0 && i < a.length - 1)
+        const [task, , deps] = cells
+        if (!task) { errors.push(`矩阵行缺少 task 列: ${row.trim()}`); continue }
+        const key = norm(task)
+        seen.set(key, (seen.get(key) || 0) + 1)
+        if (deps && !/^(无|none|-)$/i.test(deps)) {
+          for (const d of deps.split(/[,，]/)) edges.push([norm(d), key])
+        }
+      }
+      const matrixKeys = [...seen.keys()]
+      for (const t of taskBlocks) {
+        if (!matrixKeys.includes(t.title)) errors.push(`Task 契约「${t.title}」未出现在并发矩阵（精确匹配，不用子串）`)
+      }
+      for (const t of matrixKeys) {
+        if (!taskBlocks.some((b) => b.title === t)) warnings.push(`矩阵 task「${t}」在 Task 契约中无对应 ### 块`)
+      }
+      for (const [t, n] of seen) if (n > 1) errors.push(`task「${t}」在矩阵中出现 ${n} 次（必须恰好一次）`)
+      for (const [d] of edges) {
+        if (!matrixKeys.includes(d)) errors.push(`硬前驱「${d}」无法解析到矩阵中的 task`)
+      }
+      // 无环检查（拓扑排序）
+      const indeg = new Map(matrixKeys.map((k) => [k, 0]))
+      const adj = new Map(matrixKeys.map((k) => [k, []]))
+      for (const [d, t] of edges) {
+        if (indeg.has(d)) { indeg.set(t, indeg.get(t) + 1); adj.get(d).push(t) }
+      }
+      const queue = matrixKeys.filter((k) => indeg.get(k) === 0)
+      let visited = 0
+      while (queue.length) {
+        const k = queue.shift()
+        visited++
+        for (const nxt of adj.get(k)) {
+          indeg.set(nxt, indeg.get(nxt) - 1)
+          if (indeg.get(nxt) === 0) queue.push(nxt)
+        }
+      }
+      if (visited < matrixKeys.length) errors.push('并发矩阵硬前驱存在循环依赖')
+    }
+  }
+}
+
+// ---- 动态状态泄漏（D-014）：真实 checkbox 语法即 FAIL ----
+const checkboxLines = text.split(/\r?\n/).filter((l) => /-\s*\[[ xX]\]/.test(l))
+if (checkboxLines.length) {
+  errors.push(`计划正文含 ${checkboxLines.length} 行 checkbox（如「${norm(checkboxLines[0]).slice(0, 50)}」）——动态状态归 append-only ledger（D-014）`)
 }
 
 if (sub === 'lint') {
   for (const w of warnings) console.log(`WARN: ${w}`)
+  for (const e of errors) console.log(`FAIL: ${e}`)
+  console.log(errors.length ? `LINT_FAIL errors=${errors.length} warnings=${warnings.length}` : `LINT_OK warnings=${warnings.length}`)
+  process.exitCode = errors.length ? 1 : 0
+} else {
+  // ---- baseline 子命令：结构错误时拒绝运行；否则原样流式执行 ----
   if (errors.length) {
     for (const e of errors) console.log(`FAIL: ${e}`)
-    console.log(`LINT_FAIL errors=${errors.length} warnings=${warnings.length}`)
-    process.exit(1)
+    console.log('BASELINE_EXIT=2 (lint 结构错误，拒绝实跑)')
+    process.exitCode = 2
+  } else if (!baselineWs) {
+    console.error('未提供 workspace：在 Baseline Gate fenced 块内写 `# workspace: <dir>` 或传 --workspace')
+    process.exitCode = 2
+  } else {
+    console.log(`baseline workspace: ${baselineWs}`)
+    console.log('---- baseline command (verbatim) ----')
+    console.log(baselineScript)
+    console.log('---- output ----')
+    const isWin = process.platform === 'win32'
+    const shell = isWin ? 'pwsh' : '/bin/sh'
+    const args = isWin ? ['-NoProfile', '-Command', baselineScript] : ['-c', baselineScript]
+    const child = spawn(shell, args, { cwd: baselineWs, stdio: ['ignore', 'inherit', 'inherit'] })
+    const killer = setTimeout(() => { child.kill(); console.error('baseline timeout (30min)') }, 30 * 60 * 1000)
+    child.on('close', (code) => {
+      clearTimeout(killer)
+      const c = code ?? 1
+      console.log(`BASELINE_EXIT=${c} CMD=${norm(baselineScript).slice(0, 120)}`)
+      process.exitCode = c
+    })
+    child.on('error', (e) => {
+      clearTimeout(killer)
+      console.error(`baseline spawn failed: ${e.message}`)
+      process.exitCode = 2
+    })
   }
-  console.log(`LINT_OK warnings=${warnings.length}`)
-  process.exit(0)
 }
-
-// ---- baseline 子命令：实跑验收命令 ----
-if (!baselineCmd) {
-  for (const e of errors) console.log(`FAIL: ${e}`)
-  console.log('BASELINE_EXIT=2 (无法提取验收命令)')
-  process.exit(2)
-}
-if (!baselineWs) {
-  console.error('未提供 workspace：在 Baseline Gate fenced 块内写 `# workspace: <dir>` 或传 --workspace')
-  process.exit(2)
-}
-console.log(`baseline workspace: ${baselineWs}`)
-console.log(`baseline command:   ${baselineCmd}`)
-let code = 0
-let tail = ''
-try {
-  const out = execSync(baselineCmd, { cwd: baselineWs, shell: process.platform === 'win32' ? 'pwsh' : '/bin/sh', encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 30 * 60 * 1000 })
-  tail = out.split('\n').slice(-15).join('\n')
-} catch (e) {
-  code = e.status ?? 1
-  tail = [e.stdout, e.stderr].filter(Boolean).join('\n').split('\n').slice(-15).join('\n')
-}
-console.log('---- output tail ----')
-console.log(tail)
-console.log(`BASELINE_EXIT=${code} CMD=${norm(baselineCmd).slice(0, 120)}`)
-process.exit(code)
