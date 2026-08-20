@@ -78,10 +78,10 @@ MUST NOT 运行 workspace 全量测试，除非命中至少一条触发条件：
 
 不得仅因"项目可构建""任务有多步""改动是 behavioral"就跑全量。build/typecheck 跑在最小可用包/模块范围；当 focused 测试 + 范围 typecheck 已覆盖局部改动时，无需完整 build（除非 build 产物本身受影响）。运行全量测试前，内部确认命中一条触发条件；未命中则不跑。
 
-### GLM 5.2 专项校准（追加于现有校准之后）
+### 执行纪律补充
 
-6. **DIRECT-ACTION DEFAULT**：目标、期望行为、最小验证已知时，直接执行是默认。无 planning trigger = 无计划。
-7. **BOUNDED PARALLELISM**：存在 2 个独立有价值工作流时，立即在并发预算内启动。不得把独立证据收集串行排在 Plan Agent 之后。
-8. **TRIGGER DISCIPLINE**：调用 Plan Agent 或全量测试前，内部确认命中一条明确触发条件。未命中 = 不调用。
-9. **NON-CUMULATIVE QUALITY RULES**：不得把每个看起来适用的验证命令叠加。从最小充分开始，仅因具体理由升级。
-10. **STOP CONDITION**：目标行为已实现 + 要求的范围验证通过，即停止。不得为展示彻底而追加计划/探索/委托/验证。
+1. **DIRECT-ACTION DEFAULT**：目标、期望行为、最小验证已知时，直接执行是默认。无 planning trigger = 无计划。
+2. **BOUNDED PARALLELISM**：存在 2 个独立有价值工作流时，立即在并发预算内启动。不得把独立证据收集串行排在 Plan Agent 之后。
+3. **TRIGGER DISCIPLINE**：调用 Plan Agent 或全量测试前，内部确认命中一条明确触发条件。未命中 = 不调用。
+4. **NON-CUMULATIVE QUALITY RULES**：不得把每个看起来适用的验证命令叠加。从最小充分开始，仅因具体理由升级。
+5. **STOP CONDITION**：目标行为已实现 + 要求的范围验证通过，即停止。不得为展示彻底而追加计划/探索/委托/验证。
