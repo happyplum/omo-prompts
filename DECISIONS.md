@@ -100,7 +100,7 @@
 ### D-012 冻结验收契约与复审分级
 
 - 状态：`active`
-- 决策：实施 task 携带冻结 acceptance_contract（条目含稳定 ID、二元条件、证据与证据作用域）；executor、reviewer、momus 注入同一份原文。首次复审与高风险门禁（公共接口、并发、迁移、安全）永远 INITIAL 全量；低风险增量复审仅在前置 INITIAL 全绿后启用。PASS carry-over 在证据作用域工具化（文件清单/diff 求交由脚本计算）前默认关闭。契约修订 append-only。
+- 决策：实施 task 携带冻结 acceptance_contract（条目含稳定 ID、二元条件、证据与证据作用域）；executor、reviewer 与验收 oracle 注入同一份原文。首次复审与高风险门禁（公共接口、并发、迁移、安全）永远 INITIAL 全量；低风险增量复审仅在前置 INITIAL 全绿后启用。PASS carry-over 在证据作用域工具化（文件清单/diff 求交由脚本计算）前默认关闭。契约修订 append-only。
 - 验收：REJECT 的不变量必须已在冻结清单或触发契约修订；不存在由模型手算作用域交集产生的 PASS 携带。
 
 ### D-013 计划可执行性前置门
@@ -120,6 +120,18 @@
 - 状态：`active`
 - 决策：影响执行行为的治理改动（prompt、路由、门禁）落地时必须附带 scorecard 度量项与至少一个 canary 执行对照；分析会话标注 prompt 文件 hash 以支持归因。
 - 验收：改动前后各有可比较的同口径指标；无度量的治理改动不进入「已验证」状态。
+
+### D-016 不可拆重任务路由下限
+
+- 状态：`active`
+- 决策：不可再拆且需要跨 package 推理、多 lane 汇合诊断或多门禁族根因裁决的 task 不得低于 `unspecified-high`；纯确定性汇合与固定命令执行可保持 low/quick；计划外 remediate lane 同此 REMAP 标准，不得把不同 owner 的失败捆成同步任务包。
+- 验收：派发记录中重任务无低价路由；remediate lane 按 failure family 拆分。
+
+### D-017 落地双审修正包
+
+- 状态：`active`
+- 决策：C1-C6 落地后经 Oracle 一致性验收与 Metis 盲区复扫的修正——并发预算单一来源（矩阵可声明 `concurrency_budget` 覆盖默认 3/4，atlas/prometheus/执行 skill 三方对齐，canary 预算以计划字段承接）；`cohorts: none` 按单 writer 单 lane 判定（允许串行多 task，不按 task 数）；「checkbox 更新」指向账本 append 事件、计划正文只读；红 baseline 例外放行 disposition 唯一映射的 remediation task；计划修订记录迁入账本（正文严格六区块）；DELTA 复审补 `CARRIED` 状态与资格证据字段。
+- 验收：三方预算措辞一致；旧格式计划在 linter v2 下 fail-closed；DELTA 模式存在合法完整 PASS 路径。
 
 ## 已废弃决策
 
