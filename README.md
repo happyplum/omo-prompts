@@ -28,7 +28,7 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 
 并发与蜂群的权威规则由 shared skills（`omo-adaptive-execution`）与 `atlas.md` 承载，此处只保留索引级边界事实：
 
-- 默认最低成本单一 owner；独立产出/失败/验收 + 写入互斥 + 环境隔离 + 接口冻结 + 真实关键路径收益才进 parallel wave；有向依赖用 pipeline，共享核心不变量、未冻结接口或整体验收用 single-owner。
+- 默认最低成本单一 owner；独立产出/失败/验收 + 写入互斥 + 环境隔离 + 接口冻结 + 真实关键路径收益才进 parallel wave；有向依赖用 pipeline，共享核心不变量、未冻结接口、循环依赖或整体验收用 single-owner。
 - Wave 是派发 epoch 而非验证屏障；并发预算口径（运行中写入 worker + 已完成未验收产物，**默认 3**、**隔离充分时可至 4**、计划 `concurrency_budget` 为**唯一覆盖入口**）与验收/reviewer 细则见 `atlas.md`。
 - `INTEGRATE` 是本地状态；`integration task` 由唯一 integration owner 在 integration workspace 中执行，完成后进入官方 `Final Wave`——二者共同构成唯一全局收敛阶段，但不是同一对象。
 

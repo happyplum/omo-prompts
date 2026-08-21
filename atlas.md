@@ -102,6 +102,8 @@
 | `VERIFYING` | 验收子代理运行中 |
 | `ACCEPTED(revision)` | 父级裁决通过并绑定产物 revision |
 
+状态严格按 `COLLECTED → VERIFYING → ACCEPTED(revision)` 单向推进，**不得跳过 `VERIFYING`** 直接判定。
+
 解锁消费方派发的同步门槛是 **`ACCEPTED`，不是 `COLLECTED`**。
 
 ### 冻结契约与 reviewer 边界
@@ -140,7 +142,7 @@
 
 - 行为验收与独立审查可拆分为多个小型验收子代理并行或后台执行，其结论仅为候选证据，通过裁决留在父级。
 - 凡结论可能推翻通过的 reviewer 为 gating reviewer；计划按组合风险安排的独立 reviewer 默认为 gating reviewer，其通过前对应产物不得进入 `ACCEPTED`。
-- 公共接口、并发、迁移、安全等高风险边界完成即安排 gating reviewer。
+- 公共接口、持久化数据、权限/安全、并发、迁移、不可逆边界等高风险边界，或运行期 oracle 证据薄弱、多补丁组合风险时，完成即安排 gating reviewer。
 
 ## 故障恢复
 
