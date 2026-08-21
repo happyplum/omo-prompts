@@ -139,6 +139,12 @@
 - 决策：prompt 文件不引用脚本路径、命令行或工具名；计划阶段不得自动运行任何校验脚本（规划成本失控教训：机械门槛一律不进 prometheus/momus 的送审链）。计划的结构修复与规范化唯一入口是显式调用 `/repair-plan` command；机械检查（若有）在该 command 流程内按其自身 schema 执行。
 - 验收：grep prompts 正文无 `plan-linter|\.mjs|lint` 命令行或工具名；prometheus/momus 送审链零脚本前置。
 
+### D-019 高精度审查线性串行
+
+- 状态：`active`
+- 决策：高精度审查按 Momus → Oracle 线性串行送审，不并行派发双审；Momus 返回 `OKAY` 前不送 Oracle，避免高价 Oracle 消耗在会被 Momus 拒绝的版本上（与 D-007 经济性一致）。任一 reviewer 触发修订即产生新版本、既有 verdict 失效，回到 Momus 重审；最终通过 = 两份 `OKAY` 绑定同一计划版本。仅约束本地双审门的送审顺序，不改变上游各 reviewer 的职责与复审轮次（S-003 边界不变）。
+- 验收：送审记录中 Oracle 委托不早于 Momus `OKAY`；修订后不存在沿用旧版本 verdict 的通过。
+
 ## 已废弃决策
 
 ### S-001 本地优先级声明
