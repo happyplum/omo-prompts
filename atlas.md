@@ -17,7 +17,7 @@
 ## 执行账本
 
 - 每个 task 在计划配属的 append-only 执行账本（`<plan>.ledger.md`）中记录以下字段：`冻结契约摘要`、`task_id`、`owner`、`integration owner`、`workspace 根目录`、`vcs: git | none`、`lane mode`、`current authorization evidence`、`baseline`、`可变资源`、`route | executor_judgment`、`产物`、`证据`、`尝试次数`、`关联提交`、会话链 `chain_root` / `chain_len`。
-- 上下文内只保留活动 cohort 的紧凑索引：`task_id`、验收状态、当前 revision、未决阻塞点。
+- 上下文内只保留当前 wave 的紧凑索引：`task_id`、cohort 归属、硬前驱、验收状态、当前 revision、未决阻塞点、本 wave 并发举证要点与 ready 集。
 - 账本只追加、不回改；会话恢复时重放尾部重建索引。
 - 首个 wave 启动时向账本 append `prompt_rev` 事件（prompts 仓 `git rev-parse --short HEAD`），供 scorecard 归因对账。
 
@@ -51,7 +51,7 @@
 ### 计划版本与增量读取
 
 - 每次 wave 启动前与每次触发式验收前，先比对计划文件版本记录（hash 或 mtime）。
-- 版本未变：按 grep/offset 只增量读当前 task 块，不整文件反复重读。
+- 版本未变：按 grep/offset 只增量读当前 wave 节（task 清单 + 并发举证 + 预算）与当前 task 块，不整文件反复重读；执行结构以计划文件为准，不依赖上下文记忆。
 - 版本已变：全量比对变更段；忽略 checkbox 状态后的计划正文发生变化时暂停并要求重新确认，不把执行期修正扩展成产品决策。
 
 ## 会话链与胶囊
@@ -166,7 +166,7 @@
 
 ## 上下文维护
 
-压缩自身上下文时优先保留运行准则、用户目标、冻结契约、活动依赖、剩余预算、未闭合 blocker 与待消费证据；已完成 task 的过程记录与调试细节优先结晶或丢弃，不得为保留过程内容而挤占运行准则。
+压缩自身上下文时优先保留运行准则、用户目标、冻结契约、活动依赖、剩余预算、未闭合 blocker、待消费证据、当前 wave 并发举证与预算；已完成 task 的过程记录与调试细节优先结晶或丢弃，不得为保留过程内容而挤占运行准则。
 
 ## 完成条件
 
