@@ -99,3 +99,21 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 2026-08-20 核对：运行缓存曾滞留 `5.0.0-beta.7`（`auto_update` 未自动刷新缓存目录），已手动刷新至 `5.0.0-beta.12`，重启后生效（见「维护规范」）；上游行为核对一律以实装版本为准。
 
 当前 `~/.omo/omo.jsonc` 启用 `auto_update`。上游更新后需重新核对 Prometheus/Atlas/Momus 基础 prompt、`ulw-plan`、category 路由和 `/stop-continuation`；兼容基线未更新前，不假定本地 append 仍与新契约一致。
+
+### 上游提示词探查顺序
+
+探查上游角色基础 prompt 时，**先匹配当前模型绑定对应的专属变体**，不要只看 default 版：
+
+1. 先读 `~/.omo/omo.jsonc` 确定各 agent 当前绑定的模型；
+2. 在 `~/.cache/opencode/packages/oh-my-openagent@beta/node_modules/oh-my-openagent/dist/agents/` 下按模型找专属变体（文件名含模型后缀，或 `createXAgent(model)` / `getXPrompt(model)` 按模型分流）；default 版只用于核对兼容性，不作为运行时行为基线；
+3. 明文内嵌的变体（d.ts 中 `= "..."`）可直接提取；仅声明（`declare const ...: string`）或完全无 const 声明的变体在平台二进制内，本地无法提取，改以 `ulw-plan` / `start-work` skill 与 hook 契约为镜像核对。
+
+已探明边界（2026-08-21）：
+
+| 角色 | 当前绑定 | 明文提取 | 镜像核对 |
+|---|---|---|---|
+| momus | openai/gpt-5.6-sol | ✅ `momus-gpt-5-6.d.ts` | — |
+| momus 备用 | Claude/其他 | ✅ `momus.d.ts`（default） | — |
+| prometheus / atlas / metis / oracle / sisyphus | — | ❌ 二进制内 | `ulw-plan`、`start-work` skill + hooks |
+
+模型绑定变化后，按新绑定重新探查明文变体，并在上表更新探明边界。
