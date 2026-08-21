@@ -79,12 +79,6 @@ README 的「维护规范」节。
 - 决策：每个 dispatch wave 开始时，按并发预算在同一回合 fan-out 独立 ready task；已派发的独立任务互不阻塞；任何 delegation 返回后完成该 task 的逐 task 验收与 checkbox 更新，才能补位派发新任务；依赖该产物的 task 仅在其 ACCEPTED 后可派发。单轮派发量 = min(ready set, 并发预算)。上游逐 task 验收节奏不变（S-002 边界不破）。
 - 验收：scorecard 显示后台派发率 >0；不存在「验证未完成即阻塞无依赖 ready task」的串行门；canary 执行初始预算 2。
 
-### D-012 冻结验收契约与复审分级
-
-- 状态：`active`
-- 决策：实施 task 携带冻结 acceptance_contract（条目含稳定 ID、二元条件、证据与证据作用域）；executor、reviewer 与验收 oracle 注入同一份原文。首次复审与高风险门禁（公共接口、并发、迁移、安全）永远 INITIAL 全量；低风险增量复审仅在前置 INITIAL 全绿后启用。PASS carry-over 在证据作用域工具化（文件清单/diff 求交由脚本计算）前默认关闭。契约修订 append-only。审查产生的注（含 Oracle `handoff-to-momus`）由计划修订者处置：被采纳的注落到具体 acceptance_contract 条目或检查点断言，未落位视为审查未闭环；丢弃的注记录一句理由。
-- 验收：REJECT 的不变量必须已在冻结清单或触发契约修订；不存在由模型手算作用域交集产生的 PASS 携带。
-
 ### D-013 计划可执行性前置门
 
 - 状态：`active`
@@ -165,6 +159,12 @@ README 的「维护规范」节。
   - 当前目录为 git worktree 时，禁用主目录的 codegraph 索引（不向 codegraph 工具传主目录 `projectPath`），改用 worktree 内 grep/read 或自建索引。
 - 验收：worktree 内无账本副本；worktree 会话中不存在指向主目录的 codegraph 调用。
 
+### D-025 验收契约初始基线与三级现场裁决
+
+- 状态：`active`
+- 决策：验收契约由「批准后永久冻结、变化即重新规划」改为「初始基线 + 执行期三级现场裁决」。实施 task 的 acceptance_contract 以 `contract_revision: 0` 为初始基线：稳定条目 `ID` 从不复用，语义替换以 `supersedes` 关系表达；executor、reviewer 与验收 oracle 仍注入同一份当前生效契约原文与 `checklist_hash`；契约修订保持 append-only。执行期变化按三级裁决——Tier 1 现场放行：Atlas 裁决并 append 账本 `plan_revision`，仅限可由证据当场证明语义保持的类别（同一行为意图的 scope 扩展、断言单调加强、测试证据补充、机械步骤、等价或更强的检查点命令替换、锚与元数据订正、既有 REMAP 权限内的路由调整）；Tier 2 由 Oracle 裁决：验收语义变化、preference 降级、影响契约的 task 拆分/合并，及任何无法证明为 Tier 1 的变化，先收集普通证据，仅客观上无法证明 Tier 1 时才必须咨询；疑似 Tier 3（core 需求、明确用户指令、公共契约、安全边界、non-goal）停止并问用户，Oracle 不得替代用户。结构性拆分/合并/owner/依赖/顺序调整仍属证据驱动 REMAP，不构成契约裁决；触及 task 清单或并发矩阵的结构性 REMAP 须先通过项目既定的机械结构校验。复审规则承接：首次复审与高风险门禁永远 INITIAL 全量，PASS 携带以证据作用域工具化为前提；Tier 2 / Tier 3 及高风险变化强制 INITIAL，Tier 1 仅在前置 INITIAL 存在、变更条目全部实际评估、未变更条目有工具化 `CARRIED` 时允许 DELTA；Oracle 回执只是修订前门禁，契约修订后须由新的独立验证者重新验收。`ACCEPTED` 绑定（`artifact_revision`、`contract_revision`、`checklist_hash`）三元组，任一变化即回 `COLLECTED`，契约修订同时使受影响 task 的检查点证据失效。计划正文承载当前生效投影，账本承载 append-only 历史；正文与账本头部摘要不一致即 fail-closed，停止派发、验收与恢复。执行期审查注由 Atlas 按三级裁决现场处置，不再一律回到计划修订者。
+- 验收：本改动按 D-015 附证伪条件——3 个 canary（Tier 1 scope 扩展、Tier 2 语义变化、Tier 3 公共契约各一例）且分析会话记录 `prompt_rev`；scorecard 至少 4 项度量：自主裁决率、Tier 1 误判升级率、计划/账本摘要不一致次数、修订后再验收合规率。
+
 ## 已废弃决策
 
 ### S-001 本地优先级声明
@@ -191,6 +191,12 @@ README 的「维护规范」节。
 - 状态：`superseded`
 - 已废弃：仅凭说明理由，将实现与其直接测试拆成不同 task。
 - 替代：实现、直接测试与必要调用方保持同一 task/todo，只遵循上游明确允许的例外。
+
+### D-012 冻结验收契约与复审分级
+
+- 状态：`superseded`
+- 已废弃：验收契约批准后永久冻结、任何变化都冻结后重新规划的做法。
+- 替代：D-025，初始基线 + 三级现场裁决；reviewer 边界、INITIAL / DELTA 分级与独立验证要求由 D-025 承接。
 
 ## 维护流程
 

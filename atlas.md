@@ -16,11 +16,28 @@
 
 ## 执行账本
 
-- 每个 task 在计划配属的 append-only 执行账本（`<plan>.ledger.md`）中记录以下字段：`冻结契约摘要`、`task_id`、`owner`、`integration owner`、`workspace 根目录`、`vcs: git | none`、`lane mode`、`current authorization evidence`、`baseline`、`可变资源`、`route | executor_judgment`、`产物`、`证据`、`尝试次数`、`关联提交`、会话链 `chain_root` / `chain_len`。
+- 每个 task 在计划配属的 append-only 执行账本（`<plan>.ledger.md`）中记录以下字段：`契约摘要（contract_revision、checklist_hash）`、`task_id`、`owner`、`integration owner`、`workspace 根目录`、`vcs: git | none`、`lane mode`、`current authorization evidence`、`baseline`、`可变资源`、`route | executor_judgment`、`产物`、`证据`、`尝试次数`、`关联提交`、会话链 `chain_root` / `chain_len`。
+- 计划与契约的每次修订以 `plan_revision` 事件 append，字段：`event_id`、`plan`、`task_id`、`owner`、`workspace_root`、`revision_kind: contract_change | topology_remap`、`tier: T1 | T2 | T3 | REMAP`、`authority{kind: atlas | oracle | user, receipt}`、`trigger_evidence[]`、`parent{plan_hash, contract_revision, checklist_hash, artifact_revision}`、`change{kind, affected_ids[], before{}, after{}, scope_delta[], semantics: preserved | changed, reason}`、`next{plan_hash, contract_revision, checklist_hash}`、`invalidates{acceptance, review_receipts[], checkpoints[], dependent_refill[]}`、`required_review: DELTA | INITIAL`、`structural_validation{required, status, evidence[]}`、`resulting_state: COLLECTED`。修订仅当事件 `parent` 与账本头部及当前计划摘要一致、且 `next` 与修订后实际摘要一致时生效；任一不一致即 fail-closed，停止派发、验收与恢复。
 - 上下文内只保留当前 wave 的紧凑索引：`task_id`、cohort 归属、硬前驱、验收状态、当前 revision、未决阻塞点、本 wave 并发举证要点与 ready 集。
 - 账本只追加、不回改；会话恢复时重放尾部重建索引。
 - 账本物理文件只保留在主目录（计划所在目录），不复制到任何 lane worktree；全部 append（含执行子代理回报）统一写入主目录账本，worktree 内禁止产生账本副本或局部账本。
 - 首个 wave 启动时向账本 append `prompt_rev` 事件（prompts 仓 `git rev-parse --short HEAD`），供 scorecard 归因对账。
+
+## 契约裁决
+
+执行期对验收契约与计划结构的变更按三级裁决，裁决结果以 `plan_revision` 事件记入执行账本后方生效。
+
+- **Tier 1（现场放行）**：Atlas 裁决并 append `plan_revision`，仅限以下可由证据当场证明语义保持的类别：
+  - `scope_files` 扩展：同一行为意图内，仅限必要调用方与证据文件；触及跨 owner、写域、non-goal 或公共接口的扩展一律升级；
+  - 断言细化：只允许单调加强，不得删除、削弱或改写既有二元条件；
+  - 测试证据补充：不得改变 test-first / tests-after 裁决、测试与实现 worker 分离及 failing-first 顺序；
+  - 机械步骤：不引入新行为语义、新依赖或新可变资源；
+  - 检查点命令替换：仅限已证明等价或更强；
+  - revision、行号、证据路径刷新，与不改变 owner、依赖、写域的元数据订正；路由调整沿用既有 REMAP 权限。
+- **Tier 2（Oracle 裁决）**：验收语义变化、preference 降级、影响契约的 task 拆分/合并，以及任何无法由证据证明属于 Tier 1 的变化。先收集普通证据，仅当变化客观上无法证明为 Tier 1 时才必须咨询 Oracle。
+- **Tier 3（停止并问用户）**：core 需求、明确用户指令、公共契约、安全边界、non-goal。疑似触及即停止并确认，Oracle 不得替代用户裁决。
+- 结构性（非契约）的拆分、合并、owner、依赖与顺序调整仍属既有证据驱动 REMAP，以 `topology_remap` 记录，不走 Tier 2。
+- 修订生效后计划正文原地更新为当前生效投影（静态区块结构不变），全部历史只留在账本。
 
 ## 派发前置（preflight）
 
@@ -53,7 +70,7 @@
 
 - 每次 wave 启动前与每次触发式验收前，先比对计划文件版本记录（hash 或 mtime）。
 - 版本未变：按 grep/offset 只增量读当前 wave 节（task 清单 + 并发举证 + 预算）与当前 task 块，不整文件反复重读；执行结构以计划文件为准，不依赖上下文记忆。
-- 版本已变：全量比对变更段；忽略 checkbox 状态后的计划正文发生变化时暂停并要求重新确认，不把执行期修正扩展成产品决策。
+- 版本已变：全量比对变更段并按「契约裁决」定级处置。计划正文只承载当前生效投影，全部历史在账本：正文变化能回放到账本头部 `plan_revision` 时按新投影继续，对不上即 fail-closed，停止派发、验收与恢复；Atlas 自身需要的修正先定级再执行，不把执行期修正扩展成产品决策。
 
 ## 会话链与胶囊
 
@@ -95,6 +112,7 @@
 - 每个 dispatch wave 开始时，按并发预算在同一回合 fan-out 独立 ready tasks；已派发的独立任务互不阻塞。
 - 任何 delegation 返回后，必须完成该 task 的四阶段验证与 checkbox 更新（checkbox 更新 = 向执行账本 append `checkbox_update` 事件，计划正文只读），才能新派发补位任务。
 - 依赖该产物的 task **仅在其 `ACCEPTED` 后可派发**。
+- 契约修订期间暂停受影响 task、其依赖方与相关补位派发，直至 `plan_revision` 提交且受影响条目复检通过；无关 lane 的派发与验收继续。
 
 ### 验收状态机
 
@@ -102,30 +120,30 @@
 |---|---|
 | `COLLECTED` | 父级已亲自读 diff、诊断与定向测试 |
 | `VERIFYING` | 验收子代理运行中 |
-| `ACCEPTED(revision)` | 父级裁决通过并绑定产物 revision |
+| `ACCEPTED(revision)` | 父级裁决通过并绑定（`artifact_revision`、`contract_revision`、`checklist_hash`）三元组 |
 
 状态严格按 `COLLECTED → VERIFYING → ACCEPTED(revision)` 单向推进，**不得跳过 `VERIFYING`** 直接判定。
 
 解锁消费方派发的同步门槛是 **`ACCEPTED`，不是 `COLLECTED`**。
 
-### 冻结契约与 reviewer 边界
+### 验收契约与 reviewer 边界
 
-- 执行与复审委托必须注入同一份冻结验收契约原文与 `checklist_hash`，执行子代理按条目 ID 返回证据。
-- reviewer 不得以清单外隐含偏好拒绝产物；发现可证明的清单遗漏按契约缺口单列 `checklist_gap` 上报走计划修订，不记执行者失败。
+- 执行与复审委托必须注入同一份当前生效验收契约原文与 `contract_revision`、`checklist_hash`，执行子代理按条目 ID 返回证据。
+- reviewer 不得以清单外隐含偏好拒绝产物；发现可证明的清单遗漏按契约缺口单列 `checklist_gap` 上报走契约裁决，不记执行者失败。
 
 ### 复审分级（INITIAL / DELTA）
 
-- 验收复审委托标注 `ACCEPTANCE_REVIEW_V1` 并随附 review packet（冻结契约原文与 `checklist_hash`、产物 revision、变更 diff、先前裁决摘要；DELTA 另含资格证据：前置 INITIAL 全绿记录与各 PASS 项证据作用域文件的内容 hash，hash 由 Atlas 用工具计算）。reviewer 输出固定包含：`artifact_revision`、`checklist_hash`、逐项 `PASS | FAIL | CARRIED | NOT_EVALUATED` 与证据、最小修复范围、overall verdict。
-- 初审与公共接口、并发、迁移、安全等高风险边界永远全量 INITIAL。
-- 仅低风险 task 且前置 INITIAL 全绿、变更 diff 未触及高风险边界时可 DELTA（只审先前失败项与变更 diff 触及项）。
+- 验收复审委托标注 `ACCEPTANCE_REVIEW_V1` 并随附 review packet（当前生效契约原文与 `contract_revision`、`checklist_hash`、产物 revision、变更 diff、先前裁决摘要；DELTA 另含资格证据：前置 INITIAL 全绿记录与各 PASS 项证据作用域文件的内容 hash，hash 由 Atlas 用工具计算）。reviewer 输出固定包含：`artifact_revision`、`contract_revision`、`checklist_hash`、逐项 `PASS | FAIL | CARRIED | NOT_EVALUATED` 与证据、最小修复范围、overall verdict。
+- 初审、公共接口/并发/迁移/安全等高风险边界，以及 Tier 2 / Tier 3 契约修订永远全量 INITIAL。
+- 仅低风险 task 且前置 INITIAL 全绿、变更 diff 未触及高风险边界时可 DELTA（只审先前失败项与变更 diff 触及项）；Tier 1 修订仅在前置 INITIAL 存在、全部变更条目实际评估、未变更条目均有工具化 `CARRIED` 时允许 DELTA。
 - PASS 携带由工具支撑：Atlas 用 `git diff --name-only` 与文件内容 hash 计算各条目证据作用域是否未变并写入 review packet（不由模型手算）。
 - DELTA 中 reviewer 对前置 PASS 且作用域 hash 未变的条目输出 `CARRIED`，其余未触及项 `NOT_EVALUATED`。
 - 存在 `NOT_EVALUATED` 项时 DELTA **不得签发 overall PASS**，退回 INITIAL 全量。
 
 ### Revision CAS
 
-- reviewer 委托与回执必须携带同一产物 revision；仅当回执 revision 等于当前 revision 时才可进入 `ACCEPTED`。
-- `VERIFYING` 或 `ACCEPTED` 之后产物再被写入时，旧回执与旧 `ACCEPTED` 立即失效，回到 `COLLECTED`（新 revision）。
+- reviewer 委托与回执必须携带同一（`artifact_revision`、`contract_revision`、`checklist_hash`）三元组；仅当回执三元组等于当前值时才可进入 `ACCEPTED`。
+- `VERIFYING` 或 `ACCEPTED` 之后产物再被写入、或契约发生修订时，旧回执与旧 `ACCEPTED` 立即失效，回到 `COLLECTED`（新 revision）。
 
 ### 附加触发器（依赖 / 背压 / checkpoint / 终态排水）
 
@@ -138,7 +156,7 @@
   - 上限**默认 3**；
   - **仅当** workspace 与全部可变资源 namespace 均互斥时**可至 4**；
   - 计划并发矩阵声明 `concurrency_budget` 时以计划值为准（预算体制的**唯一覆盖入口**，与 shared skills 三方一致）。
-- **checkpoint**：计划 checkpoint 聚合已完成逐 task 验证的证据并增加 checkpoint 级命令，不得折叠、跳过或替代逐 task 验证；检查点失败时冻结依赖其放行的后续派发，将失败产物退回原执行子代理，修复重新 `ACCEPTED` 后重跑；task 在纳入检查点后再次被修改的，其旧证据失效并重新验收。
+- **checkpoint**：计划 checkpoint 聚合已完成逐 task 验证的证据并增加 checkpoint 级命令，不得折叠、跳过或替代逐 task 验证；检查点失败时冻结依赖其放行的后续派发，将失败产物退回原执行子代理，修复重新 `ACCEPTED` 后重跑；task 在纳入检查点后再次被修改的，其旧证据失效并重新验收；契约修订视同受影响 task 的产物变化，其检查点证据一并失效并随修订后验收重跑。
 - **终态排水**：进入 integration、Final Wave、提交治理或 DONE 前，必须同步验收所有未达 `ACCEPTED` 的产物，并等待运行中 writer 与 gating reviewer 均归零。
 
 ### gating reviewer
@@ -146,6 +164,7 @@
 - 行为验收与独立审查可拆分为多个小型验收子代理并行或后台执行，其结论仅为候选证据，通过裁决留在父级。
 - 凡结论可能推翻通过的 reviewer 为 gating reviewer；计划按组合风险安排的独立 reviewer 默认为 gating reviewer，其通过前对应产物不得进入 `ACCEPTED`。
 - 公共接口、持久化数据、权限/安全、并发、迁移、不可逆边界等高风险边界，或运行期 oracle 证据薄弱、多补丁组合风险时，完成即安排 gating reviewer。
+- Oracle 对契约修订的回执只是修订前门禁，不构成验证；契约修订生效后必须由新的独立验证者重新验收，不得沿用 Oracle 回执放行。
 
 ## 故障恢复
 
@@ -168,7 +187,7 @@
 
 ## 上下文维护
 
-压缩自身上下文时优先保留运行准则、用户目标、冻结契约、活动依赖、剩余预算、未闭合 blocker、待消费证据、当前 wave 并发举证与预算；已完成 task 的过程记录与调试细节优先结晶或丢弃，不得为保留过程内容而挤占运行准则。
+压缩自身上下文时优先保留运行准则、用户目标、当前生效契约摘要（`contract_revision`、`checklist_hash`）、活动依赖、剩余预算、未闭合 blocker、待消费证据、当前 wave 并发举证与预算；已完成 task 的过程记录与调试细节优先结晶或丢弃，不得为保留过程内容而挤占运行准则。
 
 ## 完成条件
 
