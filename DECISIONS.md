@@ -82,7 +82,7 @@ README 的「维护规范」节。
 ### D-012 冻结验收契约与复审分级
 
 - 状态：`active`
-- 决策：实施 task 携带冻结 acceptance_contract（条目含稳定 ID、二元条件、证据与证据作用域）；executor、reviewer 与验收 oracle 注入同一份原文。首次复审与高风险门禁（公共接口、并发、迁移、安全）永远 INITIAL 全量；低风险增量复审仅在前置 INITIAL 全绿后启用。PASS carry-over 在证据作用域工具化（文件清单/diff 求交由脚本计算）前默认关闭。契约修订 append-only。审查产生的注（含 Oracle `handoff-to-momus`）必须落到具体 acceptance_contract 条目或检查点断言，未落位视为审查未闭环。
+- 决策：实施 task 携带冻结 acceptance_contract（条目含稳定 ID、二元条件、证据与证据作用域）；executor、reviewer 与验收 oracle 注入同一份原文。首次复审与高风险门禁（公共接口、并发、迁移、安全）永远 INITIAL 全量；低风险增量复审仅在前置 INITIAL 全绿后启用。PASS carry-over 在证据作用域工具化（文件清单/diff 求交由脚本计算）前默认关闭。契约修订 append-only。审查产生的注（含 Oracle `handoff-to-momus`）由计划修订者处置：被采纳的注落到具体 acceptance_contract 条目或检查点断言，未落位视为审查未闭环；丢弃的注记录一句理由。
 - 验收：REJECT 的不变量必须已在冻结清单或触发契约修订；不存在由模型手算作用域交集产生的 PASS 携带。
 
 ### D-013 计划可执行性前置门
@@ -136,25 +136,24 @@ README 的「维护规范」节。
 ### D-021 测试任务组织与路由
 
 - 状态：`active`
-- 决策：测试时序判据——测试是「定义行为」还是「确认行为」。四问：①不读实现能否写测试 ②失败是否静默 ③是否语义变更/修复 ④是否仅模式复制。命中前三任一 → test-first；仅模式复制 → tests-after。test-first 任务按三段组织：
-  1. 前置红测试 task：从冻结契约派生（作者只读契约与 AC 原文，不探索代码），产出可执行规格；验收=测试红 + 逐条契约 ID 对号 + 语义抽查；默认路由 `unspecified-low`，机械转写可 `quick`，不得高于 `unspecified-low`（测试数量多不构成提级理由）。
-  2. 实现 task：含实现与其直接测试，完成标准=前置红测试全绿。
-  3. 后置补测试 task（按需可选）：补模式确认类、边界与集成覆盖；仅当覆盖缺口具体且验收价值明确才开，不作为实现 task 的验收前置；默认 `quick` / `unspecified-low`。
-- 边界：测试先行不违反 S-004——S-004 防实现先行无测试交付，红测试作为冻结契约的可执行形式前置，实现 task 交付时测试已存在且通过；前置/后置测试 task 与实现 task 分离派发（天然不同会话，禁止同一 worker 兼任）。红测试改错走契约修订 append-only。tests-after 任务不削弱上游 failing-first proof 义务（执行期走 Manual-QA failing proof + 基线表征通道）。与上游 ulw-plan「Implementation + Test = ONE todo」的差异仅在于 test-first 判据命中时前置红测试 task，实现 task 仍含直接测试；上游更新后重新核对。
-- 验收：test-first 计划含前置红测试 task 且其验收绑定契约 ID；无「实现先行、测试后置」的 task 顺序。
+- 决策：测试时序由 Momus 在计划审查时裁决，Prometheus 不自行判定，只把裁决落进计划正文（测试组织写在 Task 契约里）。判据——测试是「定义行为」还是「确认行为」。四问：①不读实现能否写测试 ②失败是否静默 ③是否语义变更/修复 ④是否仅模式复制。命中前三任一 → test-first；仅模式复制 → tests-after；其余默认 tests-after。
+  - 挂载通道：test-first 裁决以官方 QA Scenario Executability 类表达——命中的 task 计划中无前置红测试 task 时，其 QA 场景无法满足上游 failing-first proof，报 blocker 并要求拆出；tests-after 裁决为非阻断建议。
+  - 三段组织：前置红测试 task（验收=测试红 + 逐条契约 ID 对号 + 语义抽查）；实现 task（完成标准=前置红测试全绿）；后置补测试 task（按需可选，不作为实现验收前置）。
+- 边界：前置红测试是契约行为的可执行规格，实现 task 不重写等价测试，只补实现过程中新暴露的必要断言；语义抽查=核对断言与契约条目语义一致，不过则走契约修订或测试修复（append-only）；测试 task 路由不得高于 `unspecified-low`，与实现 task 分离派发（禁止同一 worker 兼任）；tests-after 不削弱 failing-first proof（走 Manual-QA 通道）。与上游 ulw-plan「Implementation + Test = ONE todo」的差异仅在于 test-first 命中时前置红测试 task，实现 task 仍含直接测试；上游更新后重新核对。
+- 验收：test-first 任务测试先行、实现随后；tests-after 任务附判据依据。
 
 ### D-022 风险特征路由下限
 
 - 状态：`active`
-- 决策：除 D-016 外，task 命中以下任一风险特征时路由不得低于 `unspecified-high`，且 `WHY_NOT_LOWER_COST` 必须点名低一档缺的能力：lifecycle 恰好一次动作；生产装配点语义变更；需先钉住错误被吞没的现状。案例：scheduled-model-block T2（ACK 2s 超时吞错 → 抛错+回滚）。
+- 决策：除 D-016 外，task 命中以下任一风险特征时路由不得低于 `unspecified-high`，且 `WHY_NOT_LOWER_COST` 必须点名低一档缺的能力：lifecycle 恰好一次动作；生产装配点（注册/接线点）语义变更；需先钉住错误被吞没的现状（baseline 表征测试）。案例：scheduled-model-block T2（ACK 2s 超时吞错 → 抛错+回滚）。
 - 验收：命中风险特征的 task 派发记录无低于 `unspecified-high` 的路由；`WHY_NOT_LOWER_COST` 点名具体能力缺口。
 
 ### D-023 计划成本效率
 
 - 状态：`active`
 - 决策：
-  - lane 收敛：lane 数=可独立验收/发布的 owner 数，不得因文件多或任务多开 lane；机械任务共享 lane。每个 parallel wave 须附墙钟论证：串行和 vs max(并行)+启动税×lane 数，启动税大于并行节省时并入现有 lane。
-  - 审查成本门槛：审查估算成本 > 执行估算 50% 时，须 `WHY_HIGH_REVIEW_COST` 点名该轮审查对执行的价值；否则降级审查 lane（Oracle 结构预检降 Momus 单审、温链复审降 diff-only）。成本问题只降 lane、不加轮。
+  - lane 收敛：lane 数 ≤ 可独立验收/发布的 owner 数 + 唯一 integration lane，不得因文件多或任务多开 lane；机械任务共享 lane。每个 parallel wave 须附墙钟论证：串行和 vs max(并行)+启动税（新 worktree 的环境初始化与基线验证成本）×lane 数，启动税大于并行节省时并入现有 lane。
+  - 审查成本门槛：审查墙钟估算 > 执行墙钟估算 50% 时，须 `WHY_HIGH_REVIEW_COST` 点名该轮审查对执行的价值；否则降级审查 lane（Oracle 架构预检降 Momus 单审、温链复审降 diff-only）。成本问题只降 lane、不加轮。
   - 证据强度与宣称一致：检查点断言须标注证据强度（集成实测/切片单测拼装/类型检查），不得宣称高于证据强度（切片单测拼装的链不得宣称 E2E；需要 E2E 须显式加入范围）。
 - 验收：plan 的并行 wave 有墙钟论证；超门槛审查有 `WHY_HIGH_REVIEW_COST` 或已降级；检查点断言与证据强度一致。
 

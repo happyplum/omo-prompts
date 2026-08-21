@@ -11,7 +11,7 @@
 
 该节节首附 3-5 行用户可读摘要：做什么、为什么、用户可见结果，用非技术语言。该节是 momus 核对计划是否违背用户需求的依据，也是 Atlas 目标不可漂移的锚点。
 
-该节每条需求标注 **core**（不达成则交付无意义，二元验收）或 **preference**（期望方向，允许执行期降级，降级须在任务终止状态标注）。判据：能否交付看 core，质量高低看 preference。案例：ACK 抛错+回滚若溅射既有行为应标 preference，降级路径=「ACK 仍吞错，但目标快照发出」。
+该节每条需求标注 **core**（不达成则交付无意义，二元验收）或 **preference**（期望方向，允许执行期降级，降级须在任务终止状态标注）。判据：能否交付看 core，质量高低看 preference。案例：ACK 抛错+回滚若波及既有调用方（如 config:set）应标 preference，降级路径=「ACK 仍吞错，但目标快照发出」。
 
 ## 基线预验
 
@@ -35,20 +35,20 @@
 
 - 原子单位分两级：**步骤级**=单 owner + 单写域 + 单二元验收检查（比它更细的拆分禁止）；**释放级**=检查点（发布、回退与整体验收在此）。
 - 一个可独立发布、回退与验收的行为意图 + 一组 owned 产物；实现、直接测试与使该行为成立所必需的调用方**必须同属一个 task/todo**；不按操作步骤拆成微任务。
-- test-first 任务的前置红测试 task 与可选后置补测试 task 各为独立 task，实现 task 仍含直接测试；测试任务组织见下节。tests-after 任务不削弱上游 failing-first proof 义务（执行期走 Manual-QA failing proof 通道）。
+- test-first 任务的前置红测试 task 与可选后置补测试 task 各为独立 task，实现 task 仍含直接测试；测试时序由 Momus 审查裁决，本节只定义计划中的写法。tests-after 任务不削弱上游 failing-first proof 义务（执行期走 Manual-QA failing proof 通道）。
 - 不同产品 owner、failure family 或可独立回退结果默认拆开。
 - 共享契约由单一 owner 先冻结，消费方在契约稳定后按 owner 并发。
 - 根 typecheck、workspace verify、最终构建或全量回归只作为 integration/checkpoint 验收，**不能以中间 owner task 无法单独通过根门禁证明「非原子」**。
 
 ### 测试任务组织
 
-- 测试时序判据——测试是「定义行为」还是「确认行为」。四问：①不读实现能否写测试 ②失败是否静默 ③是否语义变更/修复 ④是否仅模式复制。命中前三任一 → test-first；仅模式复制 → tests-after。
-- test-first 任务按三段组织：
-  1. 前置红测试 task：从冻结契约派生（作者只读契约与 AC 原文，不探索代码），产出可执行规格；验收=测试红 + 逐条契约 ID 对号 + 语义抽查。
-  2. 实现 task：含实现与其直接测试，完成标准=前置红测试全绿。
-  3. 后置补测试 task（按需可选）：补模式确认类、边界与集成覆盖；仅当覆盖缺口具体且验收价值明确才开，不作为实现 task 的验收前置。
-- 测试 task 默认路由 `unspecified-low`，机械转写可 `quick`，不得高于 `unspecified-low`；测试数量多不构成提级理由。
-- 前置/后置测试 task 与实现 task 分离派发（天然不同会话，禁止同一 worker 兼任）；红测试改错走契约修订 append-only。
+- 计划正文必须写明每个任务的测试组织；测试时序由 Momus 审查裁决，Prometheus 按裁决把测试安排落进 Task 契约，不自行判定。
+- 三段组织：
+  1. 前置红测试 task（`step_type: test-freeze`）：从冻结契约派生（作者只读契约与 AC 原文，不探索代码），产出可执行规格；验收=测试红 + 逐条契约 ID 对号 + 语义抽查（核对断言与契约条目语义一致）。
+  2. 实现 task（`step_type: impl`）：完成标准=前置红测试全绿，不重写等价测试，只补实现过程中新暴露的必要断言。
+  3. 后置补测试 task（`step_type: test-supplement`，按需可选）：补模式确认类、边界与集成覆盖；不作为实现 task 的验收前置。
+- 测试 task 路由不得高于 `unspecified-low`，机械转写可 `quick`；测试数量多不构成提级理由。
+- 前置/后置测试 task 与实现 task 分离派发（禁止同一 worker 兼任）；红测试改错走契约修订 append-only。
 
 ### 「非原子」举证标准
 
@@ -69,14 +69,14 @@
 3. 接口与验收在 wave 内冻结。
 4. 每个 task 有行为级二元验收。
 5. worktree 及端口、数据库、缓存、临时目录和生成目录等可变资源已隔离。
-6. 并行确实缩短关键路径、隔离上下文或需要不同专业契约——须附墙钟论证：串行和 vs max(并行)+启动税×lane 数，启动税大于并行节省时并入现有 lane；lane 数=可独立验收 owner 数，机械任务共享 lane，不得因文件多或任务多开 lane。
+6. 并行确实缩短关键路径、隔离上下文或需要不同专业契约——须附墙钟论证：串行和 vs max(并行)+启动税（新 worktree 的环境初始化与基线验证成本）×lane 数，启动税大于并行节省时并入现有 lane；lane 数 ≤ 可独立验收 owner 数 + 唯一 integration lane，机械任务共享 lane，不得因文件多或任务多开 lane。
 
 > **任一条件不成立即改为 single-owner 或 pipeline，不得按文件数量机械拆分。**
 
 ### Wave 组织
 
 - Task 契约按 **wave 分组**呈现，每个 wave 一个小节，标题含分类（如 `Wave A: test-freeze` / `Wave B: impl` / `Wave C: test-supplement` / `Wave D: integration`）；按步骤类型或风险类分割 wave，同类 task 归同 wave，wave 间按依赖串行、wave 内按预算并发。
-- 每个 wave 节**自带并发举证**：逐条说明并行六条件如何满足（输出依赖/唯一 owner/接口冻结/二元验收/资源隔离/关键路径墙钟论证），并声明本 wave 并发数（受 `concurrency_budget` 约束）。
+- 每个 wave 节**自带并发举证**：逐条说明并行六条件如何满足（输出依赖/唯一 owner/接口冻结/二元验收/资源隔离/关键路径墙钟论证），并声明本 wave 并发数（不超过 `concurrency_budget`）。
 - 全局「并发矩阵」保留为机器索引（task 恰好出现一次、硬前驱可解析、无环、cohort 归属），与 wave 节必须一致；Atlas 以 wave 为派发单元，wave 上直接消费并发举证，不依赖上下文记忆矩阵。
 
 ### 并发矩阵
@@ -128,7 +128,7 @@
 - 每个 task 记录最低足够 `route` 与 `execution_mode: background | foreground`。
 - 默认路由：普通有界产品实现 `unspecified-low`（Luna-max），机械局部改动 `quick`。
 - 高价路由（`unspecified-high` / `deep` / `ultrabrain` / `artistry`）**必须写 `WHY_NOT_LOWER_COST`**；前台执行独立 ready 写入任务**必须写 `WHY_NOT_PARALLEL`**。
-- 风险特征路由下限：task 命中「lifecycle 恰好一次动作」「生产装配点语义变更」「需先钉住错误被吞没的现状」任一风险特征时，路由不得低于 `unspecified-high`，`WHY_NOT_LOWER_COST` 点名低一档缺的能力。
+- 风险特征路由下限：task 命中「lifecycle 恰好一次动作」「生产装配点（注册/接线点）语义变更」「需先钉住错误被吞没的现状（baseline 表征测试）」任一风险特征时，路由不得低于 `unspecified-high`，`WHY_NOT_LOWER_COST` 点名低一档缺的能力。
 - 「跨文件」「测试多」「更稳妥」「计划较大」**均不是理由**。
 
 ### 资源与 reviewer
@@ -146,7 +146,7 @@
 - 列出检查点：每个检查点给出纳入的 task 集合（应互斥，重复纳入须说明原因）、放行条件与验收命令；或
 - 写 `checkpoints: none` 并说明无需中间检查点的依赖与风险依据；仅显式 `none` 时由 Atlas 按依赖、背压与终态排水触发器验收。
 - 检查点断言须标注证据强度（集成实测/切片单测拼装/类型检查），不得宣称高于证据强度；切片单测拼装的链不得宣称 E2E，需要 E2E 时显式加入范围。
-- 审查产生的注（含 Oracle 移交建议）必须落到具体 acceptance_contract 条目或检查点断言，未落位视为审查未闭环。
+- 审查产生的注（含 Oracle `handoff-to-momus` 移交建议）由计划修订者处置：被采纳的注落到具体 acceptance_contract 条目或检查点断言，未落位视为审查未闭环；丢弃的注记录一句理由。
 
 ## 工作区与交付
 
@@ -170,7 +170,7 @@
   - **温链复审**：修订后**续用原审查会话**（`task_id` 续用），委托只附上轮 verdict 与修订 diff，指令限定为核对 blocker 闭合与 diff 引入的新矛盾；原会话不可续用时构造**审查胶囊**（上轮 verdict + 已核实事实清单 + 已闭合项）注入新会话。
   - **干净终审**（新会话）：委托注入全文复查指令，无雷即环节闭合。
   - 温链复审默认 1 轮、最多 2 轮（reviewer 间回退合计计入），超限**停止循环升级用户裁决**。
-- 审查成本门槛：审查估算成本 > 执行估算 50% 时，须 `WHY_HIGH_REVIEW_COST` 点名该轮审查对执行的价值；否则降级审查 lane（Oracle 结构预检降 Momus 单审、温链复审降 diff-only）。成本问题只降 lane、不加轮。
+- 审查成本门槛：审查墙钟估算 > 执行墙钟估算 50% 时，须 `WHY_HIGH_REVIEW_COST` 点名该轮审查对执行的价值；否则降级审查 lane（Oracle 架构预检降 Momus 单审、温链复审降 diff-only）。成本问题只降 lane、不加轮。
 - 消费审查建议：只采纳当前目标必要或低成本高价值项，低价值建议直接丢弃；删除、迁移、公共接口变化或其他高风险动作先向用户确认。
 - Oracle 不承担通用代码质量、QA 或「为了完整再看一遍」；Momus 只针对计划缺陷与可执行性给出修订方向，不得改变产品方向，方向变更只能来自用户。
 
