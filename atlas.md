@@ -19,7 +19,7 @@
 - 每个 task 在计划配属的 append-only 执行账本（`<plan>.ledger.md`）中记录以下字段：`冻结契约摘要`、`task_id`、`owner`、`integration owner`、`workspace 根目录`、`vcs: git | none`、`lane mode`、`current authorization evidence`、`baseline`、`可变资源`、`route | executor_judgment`、`产物`、`证据`、`尝试次数`、`关联提交`、会话链 `chain_root` / `chain_len`。
 - 上下文内只保留活动 cohort 的紧凑索引：`task_id`、验收状态、当前 revision、未决阻塞点。
 - 账本只追加、不回改；会话恢复时重放尾部重建索引。
-- 首个 wave 启动时向账本 append `prompt_rev` 事件（prompts 仓 `git rev-parse --short HEAD`），供 scorecard 归因对账（D-015）。
+- 首个 wave 启动时向账本 append `prompt_rev` 事件（prompts 仓 `git rev-parse --short HEAD`），供 scorecard 归因对账。
 
 ## 派发前置（preflight）
 
@@ -109,10 +109,11 @@
 ### 冻结契约与 reviewer 边界
 
 - 执行与复审委托必须注入同一份冻结验收契约原文与 `checklist_hash`，执行子代理按条目 ID 返回证据。
-- reviewer 不得以清单外隐含偏好拒绝产物；发现可证明的清单遗漏按契约缺口上报走计划修订，不记执行者失败。
+- reviewer 不得以清单外隐含偏好拒绝产物；发现可证明的清单遗漏按契约缺口单列 `checklist_gap` 上报走计划修订，不记执行者失败。
 
 ### 复审分级（INITIAL / DELTA）
 
+- 验收复审委托标注 `ACCEPTANCE_REVIEW_V1` 并随附 review packet（冻结契约原文与 `checklist_hash`、产物 revision、变更 diff、先前裁决摘要；DELTA 另含资格证据：前置 INITIAL 全绿记录与各 PASS 项证据作用域文件的内容 hash，hash 由 Atlas 用工具计算）。reviewer 输出固定包含：`artifact_revision`、`checklist_hash`、逐项 `PASS | FAIL | CARRIED | NOT_EVALUATED` 与证据、最小修复范围、overall verdict。
 - 初审与公共接口、并发、迁移、安全等高风险边界永远全量 INITIAL。
 - 仅低风险 task 且前置 INITIAL 全绿、变更 diff 未触及高风险边界时可 DELTA（只审先前失败项与变更 diff 触及项）。
 - PASS 携带由工具支撑：Atlas 用 `git diff --name-only` 与文件内容 hash 计算各条目证据作用域是否未变并写入 review packet（不由模型手算）。

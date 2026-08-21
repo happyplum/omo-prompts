@@ -63,6 +63,22 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 | `runtime/AGENTS.md` | 全局治理规则的可提交源文件 |
 | `scripts/sync-agents.ps1` | 生成并校验运行时 `../AGENTS.md` |
 
+## 维护规范
+
+持续生效的仓库维护约定直接记录于此；[`DECISIONS.md`](DECISIONS.md) 只保存用户裁决记录。
+
+### Prompt 写作
+
+- 每份 Markdown 只有一个描述文件用途的 H1，其余章节保持递增层级（markdownlint MD025 / MD041 clean）。
+- 角色 prompt 只保留必要的准则、参考、约束与防漂移规则；禁止写入元声明、免责声明、兼容性声明及「本节只补充」「上游规则继续有效」等无行为约束力的表述。
+- **行为 prompt 自包含**：角色文件正文不引用 `DECISIONS.md` 编号或仓库内部记账；规则的约束力来自条文本身，消费 prompt 的模型不知道也不需要知道决策编号。溯源记录只存在于 `DECISIONS.md`。
+- **派发方持有协议，角色 prompt 只承载判定标准**：跨角色协作协议（审查模式标注、轮次编排、会话续用策略、胶囊构造、阻断标准注入、移交规则、输出格式契约）只写在派发方的编排文件（计划审查→`prometheus.md`，执行验收→`atlas.md`，日常委托→`sisyphus.md`），派发时写进 `task()` 委托 prompt；响应方角色 prompt 不含模式协议、轮次词汇、调度逻辑或对其他文件的元声明，只保留自身判定标准与对委托所附内容的消费。同一规则禁止双份维护，发现重复时保留派发方、从响应方删除。自查口诀：这条行为是「我自己怎么判断」还是「别人怎么调度我」——后者移到派发方。
+
+### 提交与生效
+
+- prompt、skill 或运行时规则修改完成并验证后，按独立意图原子提交并推送；审查/讨论轮次进行中**不逐轮提交**，全部审查完毕（用户确认）后一次成型，避免过程修订噪音进入历史。
+- 配置时文件（prompt、agent、skill、config）变更后完全退出并重启 OpenCode 才生效；仓库保持 clean 且与 upstream 同步，新会话读取到新版本。
+
 ## 边界
 
 - 不在本仓库复制 `skills/` 中的完整治理规则；那是上层同级 `../skills/` 的职责。
@@ -80,6 +96,6 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 - Oh My OpenAgent：`code-yeongyu/oh-my-openagent@e676fef9`（5.0.0-beta.12）
 - OpenCode：`anomalyco/opencode@550d1ffd24718454925c4636e937878f0274de48`
 
-2026-08-20 核对：运行缓存曾滞留 `5.0.0-beta.7`（`auto_update` 未自动刷新缓存目录），已手动刷新至 `5.0.0-beta.12`，按 D-009 重启后生效；上游行为核对一律以实装版本为准。
+2026-08-20 核对：运行缓存曾滞留 `5.0.0-beta.7`（`auto_update` 未自动刷新缓存目录），已手动刷新至 `5.0.0-beta.12`，重启后生效（见「维护规范」）；上游行为核对一律以实装版本为准。
 
 当前 `~/.omo/omo.jsonc` 启用 `auto_update`。上游更新后需重新核对 Prometheus/Atlas/Momus 基础 prompt、`ulw-plan`、category 路由和 `/stop-continuation`；兼容基线未更新前，不假定本地 append 仍与新契约一致。
