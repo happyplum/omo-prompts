@@ -142,8 +142,8 @@
 ### D-019 高精度审查线性串行
 
 - 状态：`active`
-- 决策：高精度审查按 Momus → Oracle 线性串行送审，不并行派发双审；Momus 返回 `OKAY` 前不送 Oracle，避免高价 Oracle 消耗在会被 Momus 拒绝的版本上（与 D-007 经济性一致）。任一 reviewer 触发修订即产生新版本、既有 verdict 失效，回到 Momus 重审；最终通过 = 两份 `OKAY` 绑定同一计划版本。仅约束本地双审门的送审顺序，不改变上游各 reviewer 的职责与复审轮次（S-003 边界不变）。
-- 验收：送审记录中 Oracle 委托不早于 Momus `OKAY`；修订后不存在沿用旧版本 verdict 的通过。
+- 决策：高精度审查按 Oracle → Momus 线性串行送审（用户裁决顺序），不并行派发双审；Oracle 返回 `OKAY` 前不送 Momus——架构与方向层裁决先闭合，再做结构可执行性审。任一 reviewer 触发修订即产生新版本、既有 verdict 失效，回到 Oracle 重审；最终通过 = 两份 `OKAY` 绑定同一计划版本。仅约束本地双审门的送审顺序，不改变上游各 reviewer 的职责与复审轮次（S-003 边界不变）。
+- 验收：送审记录中 Momus 委托不早于 Oracle `OKAY`；修订后不存在沿用旧版本 verdict 的通过。
 
 ## 已废弃决策
 
