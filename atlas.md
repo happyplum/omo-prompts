@@ -19,6 +19,7 @@
 - 每个 task 在计划配属的 append-only 执行账本（`<plan>.ledger.md`）中记录以下字段：`冻结契约摘要`、`task_id`、`owner`、`integration owner`、`workspace 根目录`、`vcs: git | none`、`lane mode`、`current authorization evidence`、`baseline`、`可变资源`、`route | executor_judgment`、`产物`、`证据`、`尝试次数`、`关联提交`、会话链 `chain_root` / `chain_len`。
 - 上下文内只保留当前 wave 的紧凑索引：`task_id`、cohort 归属、硬前驱、验收状态、当前 revision、未决阻塞点、本 wave 并发举证要点与 ready 集。
 - 账本只追加、不回改；会话恢复时重放尾部重建索引。
+- 账本物理文件只保留在主目录（计划所在目录），不复制到任何 lane worktree；全部 append（含执行子代理回报）统一写入主目录账本，worktree 内禁止产生账本副本或局部账本。
 - 首个 wave 启动时向账本 append `prompt_rev` 事件（prompts 仓 `git rev-parse --short HEAD`），供 scorecard 归因对账。
 
 ## 派发前置（preflight）
@@ -83,6 +84,7 @@
 
 - `vcs: git`：复核实际 Git 根、分支、归属和提交。
 - `vcs: none`：只核对规范化 workspace 根、写入基线、产物路径和验证证据。
+- 当前目录为 git worktree（`.git` 是文件而非目录）时，禁用主目录的 codegraph 索引：不得向 codegraph 工具传主目录 `projectPath`，代码定位改用 worktree 内 grep/read 或 worktree 自建索引；委托中同样禁止执行子代理用主目录索引读 worktree 内容。
 - 多个写入 lane 只能由计划指定的唯一 integration owner 按授权顺序汇合，并只以集成 workspace 的验收结果作为最终完成依据。
 - 发现产物、暂存或提交外溢时停止受影响分支并退回原执行子代理。
 

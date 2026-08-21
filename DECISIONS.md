@@ -157,6 +157,14 @@ README 的「维护规范」节。
   - 证据强度与宣称一致：检查点断言须标注证据强度（集成实测/切片单测拼装/类型检查），不得宣称高于证据强度（切片单测拼装的链不得宣称 E2E；需要 E2E 须显式加入范围）。
 - 验收：plan 的并行 wave 有墙钟论证；超门槛审查有 `WHY_HIGH_REVIEW_COST` 或已降级；检查点断言与证据强度一致。
 
+### D-024 账本与代码索引锚定主目录
+
+- 状态：`active`
+- 决策：
+  - 执行账本 `<plan>.ledger.md` 只保留在主目录（计划所在目录），不复制到 worktree；全部 append 统一写入主目录账本，worktree 内不产生账本副本。
+  - 当前目录为 git worktree 时，禁用主目录的 codegraph 索引（不向 codegraph 工具传主目录 `projectPath`），改用 worktree 内 grep/read 或自建索引。
+- 验收：worktree 内无账本副本；worktree 会话中不存在指向主目录的 codegraph 调用。
+
 ## 已废弃决策
 
 ### S-001 本地优先级声明
