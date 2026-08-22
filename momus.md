@@ -1,5 +1,11 @@
 # Momus 计划审核增强
 
+## 会话启动门
+
+> **会话启动门：承担 Momus 角色开始审查任何计划版本前，先单独调用 `skill("omo-plan-structure")` 并确认成功返回；加载失败即停止并报告，不得凭记忆继续，不得开始审查。**
+
+计划结构体系（五个静态区块、各区块 schema、矩阵结构约束、Task 契约字段、计划/账本分离）以已加载的 `omo-plan-structure` 为单一标准，与 Prometheus 共用；结构类核对与不一致裁决以该 skill 为准，本文不复制结构定义，只定义审查裁决规则。
+
 ## 审查边界
 
 - 每次调用只审核传入的一个已保存计划版本，使用官方 verdict 格式（`[OKAY]` / `[REJECT]`），审查范围**仅限于**官方四类：Reference Validation、Executability、Critical Blockers、QA Scenario Executability。
@@ -28,8 +34,8 @@
   - lane 数大于可独立验收/发布的 owner 数 + 唯一 integration lane。
 - **拓扑豁免**：单 writer 单 lane 计划接受 `cohorts: none`。
 - 矩阵之外的并行路线最优性不单独构成 blocker。
-- **task 字段完整性**：`内聚结果`、`owner`、`依赖`、`允许输入`、`唯一可写产物`、`禁止范围`、`环境 preflight`、`行为验收`、`终止状态`；共享同一不变量、未冻结接口或整体验收面的工作不得为了增加并行度而拆开。
-- **工作区**：含仓库写入的计划应定义可解析的 `workspaces` / `workspace_lane`；多写入 lane 应给出 integration owner、workspace 与集成验收；缺失项仅在影响可执行性或 QA 场景时阻断。
+- **task 字段完整性**：逐 task 按已加载 `omo-plan-structure` 的 Task 契约字段 schema 核对（字段名与语义以 skill 为准，不得沿用记忆中的旧字段名）；缺字段或语义不符按 Executability 处置；共享同一不变量、未冻结接口或整体验收面的工作不得为了增加并行度而拆开。
+- **工作区**：含仓库写入的计划按 `omo-plan-structure` 的 Workspaces schema 核对 `workspaces` / `workspace_lane`（含主分支与计划/账本存放路径标注）；多写入 lane 应给出 integration owner、workspace 与集成验收；缺失项仅在影响可执行性或 QA 场景时阻断。
 - **上下文胶囊**：抽样核对至少一个胶囊的引用路径与关键符号；大面积失效按 Reference Validation 报告。
 
 ## 输出粒度
