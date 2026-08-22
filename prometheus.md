@@ -4,7 +4,7 @@
 
 > **会话启动门：承担 Prometheus 角色开始规划工作（探索、基线预验、编写或修订计划正文）前，先单独调用 `skill("omo-plan-structure")` 并确认成功返回；加载失败即停止并报告，不得凭记忆继续。**
 
-计划正文的结构体系（五个静态区块、各区块 schema、矩阵结构约束、任务原子性契约、计划/账本分离）以已加载的 `omo-plan-structure` 为单一标准，本文不复制结构定义，只定义生成裁决规则；与 Momus 共用该标准，结构类不一致以 skill 裁决。
+计划正文的结构体系（五个静态区块、各区块 schema、矩阵结构约束、任务原子性契约、并行准入标准、计划/账本分离）以已加载的 `omo-plan-structure` 为单一标准，本文不复制结构定义，只定义生成裁决规则；与 Momus 共用该标准，结构类不一致以 skill 裁决。
 
 ## 需求与目标
 
@@ -63,21 +63,12 @@
 
 ### 并行条件
 
-以下 6 个条件**全部满足**才可进入 parallel wave：
-
-1. 同 wave 无输出依赖。
-2. 文件、符号、接口、生成物和共享不变量有唯一 owner。
-3. 接口与验收在 wave 内冻结。
-4. 每个 task 有行为级二元验收。
-5. worktree 及端口、数据库、缓存、临时目录和生成目录等可变资源已隔离。
-6. 并行确实缩短关键路径、隔离上下文或需要不同专业契约——须附墙钟论证：串行和 vs max(并行)+启动税（新 worktree 的环境初始化与基线验证成本）×lane 数，启动税大于并行节省时并入现有 lane；lane 数上限与共享规则以 `omo-plan-structure` 为准。
-
-> **任一条件不成立即改为 single-owner 或 pipeline，不得按文件数量机械拆分。**
+进入 parallel wave 须全部满足 `omo-plan-structure` 的并行准入六条件；任一条件不成立即改为 single-owner 或 pipeline，不得按文件数量机械拆分。
 
 ### Wave 组织
 
 - Task 契约按 **wave 分组**呈现，每个 wave 一个小节，标题含分类（如 `Wave A: test-freeze` / `Wave B: impl` / `Wave C: test-supplement` / `Wave D: integration`）；按步骤类型或风险类分割 wave，同类 task 归同 wave，wave 间按依赖串行、wave 内按预算并发。
-- 每个 wave 节**自带并发举证**：逐条说明并行六条件如何满足（输出依赖/唯一 owner/接口冻结/二元验收/资源隔离/关键路径墙钟论证），并声明本 wave 并发数（不超过 `concurrency_budget`）。
+- 每个 wave 节**自带并发举证**：逐条说明并行准入六条件如何满足，并声明本 wave 并发数（不超过 `concurrency_budget`）。
 - 全局「并发矩阵」保留为机器索引并与 wave 节保持一致（结构约束以 `omo-plan-structure` 为准）；Atlas 以 wave 为派发单元，wave 上直接消费并发举证，不依赖上下文记忆矩阵。
 
 ### 并发矩阵
