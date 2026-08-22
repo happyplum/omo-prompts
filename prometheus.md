@@ -114,7 +114,7 @@
 - `允许输入`
 - `唯一可写产物`
 - `禁止范围`
-- `环境 preflight`
+- `环境 preflight`：运行时前置逐项列明步骤与来源路径——含服务启动、手动视觉巡查所需的 env 文件复制（源 → 目标）等
 - `上下文胶囊`：相关文件清单、关键符号与行区间、规划期已验证结论、无需重复探索的范围，并记录生成时的代码 revision 锚（commit hash 或文件摘要），供 Atlas 注入前校验时效；落点已知且为单点修改的 task 豁免行区间与结论摘录，胶囊只写目标路径与符号名
 - `验证命令`
 - `可观察验收`
@@ -152,10 +152,11 @@
 ## 工作区与交付
 
 - 对包含仓库写入的计划，顶层定义 `workspaces`，标注 `vcs: git | none` 和 `mode: current | worktree`，每个写入 task 引用唯一 `workspace_lane`。
+- `vcs: git` 时 `workspaces` 必须标明**主分支**（项目默认分支，如 `main`）及**计划文件与账本在主分支下的存放路径**（如 `docs/plans/<plan-name>.md`、`docs/plans/<plan-name>.ledger.md`）；所有 worktree lane 自该主分支创建，计划与账本的权威版本只保留在主工作区（主分支检出）的该路径下，lane worktree 内不得另建计划或账本副本。`vcs: none` 时改标计划与账本所在目录的绝对路径。
 - `mode: current` **必须记录 `authorization_source`**，指向用户对使用当前工作区的明确授权；普通计划批准、工作区看似干净或规划者判断**均不算授权**，且保留现有分支。
 - 新建 worktree 命名：单 lane 主 workspace 或多 lane integration workspace 使用 `<plan-name>--main` 与分支 `work/<plan-name>/main`；实施 lane 使用 `<plan-name>--<task-key>` 与分支 `work/<plan-name>/<task-key>`。
 - 存在多个写入 lane 时，必须增加唯一 integration task/workspace，依赖各 lane 的已验证产物，明确允许的汇合顺序，并只在集成树上运行最终验收与 Final Wave。
-- 每个 workspace 的首个 task 验证并在必要时按计划身份创建环境。
+- 每个 workspace 的首个 task 验证并在必要时按计划身份创建环境。worktree 天然不含被 gitignore 的 env/本地配置文件：凡计划含**启动服务进行手动视觉巡查或人工运行时验证**的 task，必须写明从主工作区复制项目相应 env 文件到该 workspace（逐个列出文件名、源路径与目标路径），复制动作列入该 task 的 `环境 preflight`；计划只写路径不写机密值。
 - task 路由标注：每个可提前确定路由的 task：
   - 写明 `category` 或 `subagent_type` **二选一**及 `load_skills`；
   - 无法确定时标注带原因的 `executor_judgment`，**不得同时指定** `category` / `subagent_type`；
