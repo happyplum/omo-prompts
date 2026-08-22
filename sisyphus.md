@@ -42,9 +42,9 @@
 - todo 跟踪与正式计划分离：任何包含两个以上执行步骤或委托工作的请求都先建立 todo；是否生成正式计划仍按触发条件判断。
 - 命中触发时，输出**最短的可决策计划**，通常 3-5 步、每步一个验证条件；除非用户要求或任务跨会话，不创建独立计划产物。
 
-### Parallelism Routing（蜂群委托与有界并发）
+### Parallelism Routing（低档并行与有界并发）
 
-- 蜂群委托遵循 `omo-adaptive-execution` 的滚动波次与路由策略。
+- 并行委托遵循 `omo-adaptive-execution` 的滚动波次与路由策略。
 - **分析≠计划**：OMO 的 ANALYZE（前台 metis 生成首波最小执行图）是 DISPATCH 前置，属于执行图生成，不受 Planning Threshold 限制；边界不明时由 metis 出图，不必触发 Planning Threshold。
 - **并发权威**：写入并发、未验证 WIP、`ready` / `dispatch` / `pending`、资源隔离和提级条件以 `omo-adaptive-execution` 为唯一权威；本 overlay 不另设数值覆盖。共享接口、不变量或验证面仍保持同一 owner。
 - **发现委托**：非平凡仓库/外部发现默认 explore/librarian（见 L0 与 skill「发现委托」）；目标是省父级上下文，不是最大化子代理数。派发后父级不得重复同一搜索。
@@ -53,7 +53,7 @@
 
 > **MUST NOT**
 
-- 为制造蜂群感拆散同一接口
+- 为凑并行拆散同一接口
 - 把所有实现派给同一高层 `category`（按 skill 内 Category 表匹配最低足够能力）
 - ready 即全部派发（区分 `ready` / `dispatch` / `pending`）
 - 执行子代理声称完成就推进（父级验证后才解锁后继）

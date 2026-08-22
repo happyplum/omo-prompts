@@ -24,9 +24,9 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 - 通用治理、task 契约和可复用规范由 `../skills/`、运行时 skills 与 `runtime/AGENTS.md` 承载；`../AGENTS.md` 是由同步脚本生成的运行时副本。
 - `~/.omo/omo.jsonc` 只使用 `file://` 形式的 `prompt_append`；每个 agent 的追加内容放在同名 Markdown 文件中，便于独立回顾、审查和 Git 记录。
 
-### 有界蜂群边界（索引）
+### 有界并行边界（索引）
 
-并发与蜂群的权威规则由 shared skills（`omo-adaptive-execution`）与 `atlas.md` 承载，此处只保留索引级边界事实：
+并发的权威规则由 shared skills（`omo-adaptive-execution`）与 `atlas.md` 承载，此处只保留索引级边界事实：
 
 - 默认最低成本单一 owner；独立产出/失败/验收 + 写入互斥 + 环境隔离 + 接口冻结 + 真实关键路径收益才进 parallel wave；有向依赖用 pipeline，共享核心不变量、未冻结接口、循环依赖或整体验收用 single-owner。
 - Wave 是派发 epoch 而非验证屏障；并发预算口径（运行中写入 worker + 已完成未验收产物，**默认 3**、**隔离充分时可至 4**、计划 `concurrency_budget` 为**唯一覆盖入口**）与验收/reviewer 细则见 `atlas.md`。
@@ -53,7 +53,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 | 文件 | 作用 |
 |------|------|
 | `prometheus.md` | 在上游计划契约内补充需求溯源、owner/failure-family 原子化证据、三类执行拓扑、路由字段、验收 checkpoint 与 workspace lane 契约；高精度审查保留上游 Momus+Oracle 双 OKAY |
-| `atlas.md` | 在上游逐 delegation 四阶段验证、checklist 与 checkbox 更新之上，补充 execution-only 边界、蜂群并行派发、revision 绑定、依赖/背压/checkpoint/终态附加门禁、工作区与集成裁决 |
+| `atlas.md` | 在上游逐 delegation 四阶段验证、checklist 与 checkbox 更新之上，补充 execution-only 边界、有界并行派发、revision 绑定、依赖/背压/checkpoint/终态附加门禁、工作区与集成裁决 |
 | `sisyphus.md` | 强化小团队 Leader 的经济路由、调度、上下文控制与验收 |
 | `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
 | `momus.md` | 在官方 Reference Validation、Executability、Critical Blockers、QA Scenario Executability 四类审查内，使用原子化、拓扑、工作区和上下文胶囊作为证据判据；不新增 blocker 类别或本地复审上限 |

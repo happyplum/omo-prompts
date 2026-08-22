@@ -75,7 +75,7 @@
 
 计划必须包含机器可消费的 `## 并发矩阵` 区块，区块 schema 与结构约束（含 `cohorts: none` 豁免与 `concurrency_budget` 声明）以 `omo-plan-structure` 为准：
 
-- 凡满足并行条件的 task **必须归入同一 cohort**，贯彻蜂群并发，不得无证据默认串行。
+- 凡满足并行条件的 task **必须归入同一 cohort**，不得无证据默认串行。
 - 执行期结构性 REMAP（拆分、合并、owner、依赖与顺序调整）以账本 `plan_revision`（`topology_remap`）同步更新矩阵投影，保持满足结构标准且与 wave 节一致。
 
 ### Task 契约
