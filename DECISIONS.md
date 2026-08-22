@@ -230,6 +230,40 @@ README 的「维护规范」节。
 - 验收：除本条历史记载外，本地 prompts 与 skills 全文无「蜂群」残留；
   未新增数值上限、门禁或 reviewer 要求。
 
+### D-030 经济路由、失败升档与测试链流水
+
+- 状态：`active`
+- 决策：
+  - 经济优先 sizing：内聚单元超出 `quick` / `unspecified-low` 可执行
+    尺寸时，优先沿独立 owner / failure family / 可独立验收边界继续拆
+    小；共享同一推理、不可拆的直接路由高档（D-016 / D-022 下限不
+    变），不用低档硬试。由 `omo-plan-structure` 原子性契约承载。
+  - 失败升档协议：归因前置排除缺上下文/依赖/环境后仅能力不足升档；
+    `quick → unspecified-low → unspecified-high` 线性，之上按失败性
+    质选 `deep` / `ultrabrain`；升档前复核不可拆、补
+    `WHY_NOT_LOWER_COST`、新会话注入断点胶囊续用原 `task_id`；每次
+    升档计入补救预算（默认 2 次），顶档仍失败转 blocked / oracle /
+    用户。由 `omo-adaptive-execution` 承载。
+  - 路由明确性审查：Momus 初审穷举维度新增矩阵 route 三选一核对、
+    `load_skills` 匹配与高价路由举证核对。
+  - Task 契约精简：写域三字段（`允许输入` / `唯一可写产物` /
+    `禁止范围`）合并为 `写域`（读域由上下文胶囊承载）；删除与
+    acceptance_contract 重复的 `可观察验收` / `必要证据`；删除
+    `终止状态`（blocked 附断点胶囊的 worker 义务移入
+    `omo-adaptive-execution` 委托契约）；`环境 preflight` 改条件字段
+    （D-026 场景保留）。
+  - 测试链流水：wave 从类型批次（同类归同 wave、wave 间串行）改为
+    依赖就绪分组，`test-freeze` 可与写域互斥的 `impl` 同 wave 并行，
+    测试链按 task 流水；最小波数约束防碎片化。
+  - 研究溯源：TDD 四问判据与 Fucci et al.（ICSE 2017：test-first/
+    test-last 整体差异小、循环粒度关键）及 Nagappan et al.（2008：
+    工业案例缺陷密度 -40~90%）结论吻合，momus 判据不改；Cognition
+    「共享推理不拆、上下文碎片化」与编排 pipeline 模式支持 sizing
+    与流水裁决。
+- 验收：两仓 grep 无被删字段名与「同类 task 归同 wave」残留；断点
+  胶囊义务在 skill 委托契约有载体；Task 契约字段清单单一来源。
+  canary 对照按 D-015 待首个真实计划执行时补。
+
 ## 已废弃决策
 
 ### S-001 本地优先级声明
