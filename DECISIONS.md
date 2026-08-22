@@ -30,8 +30,10 @@ README 的「维护规范」节。
 ### D-002 Atlas 按序加载执行 skills
 
 - 状态：`active`
-- 决策：Atlas 会话开始先加载 `omo-adaptive-execution`，成功后再加载
-  `omo-atlas-execution-constraints`；此前不读取计划、不操作文件、不派发。
+- 决策：Atlas 承担角色开始执行协调前，先加载 `omo-adaptive-execution`，
+  成功后再加载 `omo-atlas-execution-constraints`，此前不读取计划、
+  不操作文件、不派发；启动门不以任何工具调用或计划读取为条件前置，
+  与 Prometheus / Momus 的启动门同格式。
 - 验收：会话工具记录能证明两次 skill 调用按序成功。
 
 ### D-003 按 owner 与 failure family 原子化

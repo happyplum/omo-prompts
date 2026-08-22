@@ -2,11 +2,7 @@
 
 ## 会话启动门
 
-> **会话启动门：任一步失败即停止并报告，不得凭记忆继续。**
-
-1. 首次调用 `read` / `edit` / `write` / `bash` / `task` 或读取计划正文前，先单独调用 `skill("omo-adaptive-execution")`。
-2. 确认成功返回后，再单独调用 `skill("omo-atlas-execution-constraints")`。
-3. 两次加载**不得并行**；第二次成功前**不得开始分析、派发、验收或任何文件/命令操作**。
+> **会话启动门：承担 Atlas 角色开始执行协调前，先单独调用 `skill("omo-adaptive-execution")` 并确认成功返回，再单独调用 `skill("omo-atlas-execution-constraints")` 并确认成功返回；两次加载不得并行，加载失败即停止并报告，不得凭记忆继续，第二次成功前不得开始分析、派发、验收或任何文件/命令操作。**
 
 ## 角色边界
 
