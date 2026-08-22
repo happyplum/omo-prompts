@@ -80,6 +80,7 @@ README 的「维护规范」节。
 - 状态：`active`
 - 决策：每个 dispatch wave 开始时，按并发预算在同一回合 fan-out 独立 ready task；已派发的独立任务互不阻塞；任何 delegation 返回后完成该 task 的逐 task 验收与 checkbox 更新，才能补位派发新任务；依赖该产物的 task 仅在其 ACCEPTED 后可派发。单轮派发量 = min(ready set, 并发预算)。上游逐 task 验收节奏不变（S-002 边界不破）。
 - 验收：scorecard 显示后台派发率 >0；不存在「验证未完成即阻塞无依赖 ready task」的串行门；canary 执行初始预算 2。
+- 修订（2026-08-22，D-031）：验收节奏改为节点统一召回——预算内持续 fan-out 补位，验收集中在 wave 末/检查点/依赖解锁前/终态排水；预算上限（运行中+未验收）仍为强制背压。
 
 ### D-013 计划可执行性前置门
 
@@ -122,12 +123,14 @@ README 的「维护规范」节。
 - 状态：`active`
 - 决策：高精度审查按 Oracle → Momus 线性串行送审（用户裁决顺序），不并行派发双审；Oracle 返回 `OKAY` 前不送 Momus——架构与方向层裁决先闭合，再做结构可执行性审。任一 reviewer 触发修订即产生新版本、既有 verdict 失效，回到 Oracle 重审；最终通过 = 两份 `OKAY` 绑定同一计划版本。仅约束本地双审门的送审顺序，不改变上游各 reviewer 的职责与复审轮次（S-003 边界不变）。
 - 验收：送审记录中 Momus 委托不早于 Oracle `OKAY`；修订后不存在沿用旧版本 verdict 的通过。
+- 修订（2026-08-22，D-031）：双审不再默认执行——计划审查由用户手动触发，选择不审 / 单审 Momus / 双审 Oracle→Momus；选中双审时本条串行规则仍适用。
 
 ### D-020 计划审查分工与收敛三段式
 
 - 状态：`active`
 - 决策：计划审查双 reviewer 分工收敛（mitm 计划 5 轮 Oracle 循环 $12/41min 教训：无收敛条件+每轮全新会话重扫+显微架构同权重）——Oracle 只阻断架构层大雷（执行期无法自救且测试无法拦截级），显微级发现以 `handoff-to-momus` 非阻断建议移交；Momus 承接机械维度穷举（类型/单位/字段映射/调用方/文件归属/命令可执行性/契约-AC 一致性，完整审查委托逐维标注不允许遗漏）。每个 reviewer 环节内部三段式收敛：初审（干净上下文新会话）→ 修订后温链复审（续用原会话，只核闭合与 diff 新矛盾；不可续用时注入审查胶囊）→ 干净终审（新会话一次性复查，无雷即闭合）。温链复审默认 1 轮、最多 2 轮，超限停止循环升级用户裁决；reviewer 间仍线性 Oracle→Momus（D-019），跨 reviewer 回退合计计入温链上限。落点分工见 README「维护规范」。
 - 验收：送审记录无超上限审查循环；温链轮复审不重读全文（input 显著低于初审）；Oracle 显微发现以 handoff 建议出现在 Momus 核对清单。
+- 修订（2026-08-22，D-031）：三段式收敛压缩为初核全量 + 温链 diff 复审 + 闭合（干净终审并入闭合条件）；reviewer 分工与 handoff 机制保留。
 
 ### D-021 测试任务组织与路由
 
@@ -166,6 +169,7 @@ README 的「维护规范」节。
 - 状态：`active`
 - 决策：验收契约由「批准后永久冻结、变化即重新规划」改为「初始基线 + 执行期三级现场裁决」。实施 task 的 acceptance_contract 以 `contract_revision: 0` 为初始基线：稳定条目 `ID` 从不复用，语义替换以 `supersedes` 关系表达；executor、reviewer 与验收 oracle 仍注入同一份当前生效契约原文与 `checklist_hash`；契约修订保持 append-only。执行期变化按三级裁决——Tier 1 现场放行：Atlas 裁决并 append 账本 `plan_revision`，仅限可由证据当场证明语义保持的类别（同一行为意图的 scope 扩展、断言单调加强、测试证据补充、机械步骤、等价或更强的检查点命令替换、锚与元数据订正、既有 REMAP 权限内的路由调整）；Tier 2 由 Oracle 裁决：验收语义变化、preference 降级、影响契约的 task 拆分/合并，及任何无法证明为 Tier 1 的变化，先收集普通证据，仅客观上无法证明 Tier 1 时才必须咨询；疑似 Tier 3（core 需求、明确用户指令、公共契约、安全边界、non-goal）停止并问用户，Oracle 不得替代用户。结构性拆分/合并/owner/依赖/顺序调整仍属证据驱动 REMAP，不构成契约裁决；触及 task 清单或并发矩阵的结构性 REMAP 须先通过项目既定的机械结构校验。复审规则承接：首次复审与高风险门禁永远 INITIAL 全量，PASS 携带以证据作用域工具化为前提；Tier 2 / Tier 3 及高风险变化强制 INITIAL，Tier 1 仅在前置 INITIAL 存在、变更条目全部实际评估、未变更条目有工具化 `CARRIED` 时允许 DELTA；Oracle 回执只是修订前门禁，契约修订后须由新的独立验证者重新验收。`ACCEPTED` 绑定（`artifact_revision`、`contract_revision`、`checklist_hash`）三元组，任一变化即回 `COLLECTED`，契约修订同时使受影响 task 的检查点证据失效。计划正文承载当前生效投影，账本承载 append-only 历史；正文与账本头部摘要不一致即 fail-closed，停止派发、验收与恢复。执行期审查注由 Atlas 按三级裁决现场处置，不再一律回到计划修订者。
 - 验收：本改动按 D-015 附证伪条件——3 个 canary（Tier 1 scope 扩展、Tier 2 语义变化、Tier 3 公共契约各一例）且分析会话记录 `prompt_rev`；scorecard 至少 4 项度量：自主裁决率、Tier 1 误判升级率、计划/账本摘要不一致次数、修订后再验收合规率。
+- 修订（2026-08-22，D-031）：INITIAL/DELTA/CARRIED/NOT_EVALUATED 复审分级与 review packet 体系删除，复审统一为温链 diff-only；三级裁决、CAS 三元组、append-only 与 fail-closed 保留。
 
 ### D-026 计划标明主分支路径与巡查 env 复制
 
@@ -264,6 +268,35 @@ README 的「维护规范」节。
   胶囊义务在 skill 委托契约有载体；Task 契约字段清单单一来源。
   canary 对照按 D-015 待首个真实计划执行时补。
 
+### D-031 治理栈减负（节点统一召回与判据化）
+
+- 状态：`active`
+- 决策：
+  - 验收节奏：删除「每个 delegation 返回先完成四阶段验证与 checkbox
+    更新才能补位」的逐任务仪式；预算内持续 fan-out，验收集中在 wave
+    末、检查点、依赖解锁前、终态排水四类节点；预算口径（运行中写入
+    worker + 未验收产物，默认 3/4）为强制背压；高风险边界完成即验收。
+  - 状态机与复审简化：COLLECTED→VERIFYING→ACCEPTED 三态收敛为
+    `ACCEPTED(revision)` 单门；删除 INITIAL/DELTA/CARRIED/
+    NOT_EVALUATED/review packet 体系，复审统一温链 diff-only；CAS
+    三元组（artifact_revision/contract_revision/checklist_hash）保留。
+  - 账本精简：task 条目 15→7 字段，`plan_revision` 事件 ~20→7 字段；
+    摘要一致 fail-closed 保留。
+  - 计划审查用户触发：Prometheus 计划完成后询问用户选择不审 / 单审
+    Momus / 双审 Oracle→Momus，命中高风险特征建议双审。
+  - AGENTS.md 减半重构：195→约 75 行，六套规则并为四节，流程性条款
+    改判据性条款，细则由 skills 承载。
+  - 计划正文减重：删逐 wave 差异式举证（矩阵 + 一行声明），Prometheus
+    章节压缩约三分之一；wave 为依赖就绪集合（D-030）不变。
+  - 参照：Codex/Claude 编排模式（controller 侧验证、并行 fan-out +
+    统一收集）；Codex 社区「compaction 丢验收目标→无限循环」证明
+    acceptance_contract 持久化必须保留；「orchestrator 频繁打断子代理」
+    证明逐 task 验收节奏应废弃。
+- 验收：核心栈行数 AGENTS ~75 / atlas ~105 / prometheus ~95 /
+  adaptive-execution ~150；grep 无「四阶段验证、INITIAL、DELTA、
+  CARRIED、NOT_EVALUATED、review packet」残留（本文件历史记载除外）；
+  `sync-agents.ps1 -Check` 通过。
+
 ## 已废弃决策
 
 ### S-001 本地优先级声明
@@ -277,6 +310,7 @@ README 的「维护规范」节。
 - 状态：`superseded`
 - 已废弃：用本地触发式批量验收替代上游逐 task 验收或 checkbox 节奏。
 - 替代：保留上游最低验收节奏，本地 checkpoint 只增加更强 gate。
+- 补注（2026-08-22，D-031）：节点统一召回保留依赖 ACCEPTED 门与高风险逐 task 验收，与曾废弃的纯批量验收不同，不构成回退。
 
 ### S-003 固定 reviewer 流程
 
