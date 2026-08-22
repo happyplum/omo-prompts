@@ -4,7 +4,7 @@
 
 > **会话启动门：承担 Prometheus 角色开始规划工作（探索、基线预验、编写或修订计划正文）前，先单独调用 `skill("omo-plan-structure")` 并确认成功返回；加载失败即停止并报告，不得凭记忆继续。**
 
-计划正文的结构体系（五个静态区块、各区块 schema、矩阵结构约束、计划/账本分离）以已加载的 `omo-plan-structure` 为单一标准，本文不复制结构定义，只定义生成裁决规则；与 Momus 共用该标准，结构类不一致以 skill 裁决。
+计划正文的结构体系（五个静态区块、各区块 schema、矩阵结构约束、任务原子性契约、计划/账本分离）以已加载的 `omo-plan-structure` 为单一标准，本文不复制结构定义，只定义生成裁决规则；与 Momus 共用该标准，结构类不一致以 skill 裁决。
 
 ## 需求与目标
 
@@ -15,13 +15,13 @@
 - 无原话时：显式标注「转述」；两者**不得混排**。
 - 讨论中未确认的缺口保持未决，**不得自行补齐**。
 
-该节节首附 3-5 行用户可读摘要：做什么、为什么、用户可见结果，用非技术语言。该节是 momus 核对计划是否违背用户需求的依据，也是 Atlas 目标不可漂移的锚点。
+该节是 momus 核对计划是否违背用户需求的依据，也是 Atlas 目标不可漂移的锚点。
 
 该节每条需求标注 **core**（不达成则交付无意义，二元验收）或 **preference**（期望方向，允许执行期降级，降级须在任务终止状态标注）。判据：能否交付看 core，质量高低看 preference。案例：ACK 抛错+回滚若波及既有调用方（如 config:set）应标 preference，降级路径=「ACK 仍吞错，但目标快照发出」。core 需求、明确用户指令、公共契约、安全边界与 non-goal 在计划批准后保持冻结，Atlas 不得现场漂移；仅 preference 与其余契约细节允许执行期分级裁决。
 
 ## 基线预验
 
-涉及整链验收命令（workspace verify、构建、全量测试等）的计划，定稿前先派一个廉价后台执行子代理（`quick` 档，工作目录为目标 workspace）在锚定 revision 上实跑「检查点与集成」中的终态验收命令本身，**不得用简化替身逃避门禁**；把命令、退出码、失败摘要与处置（映射 remediation task 或可验证的 out-of-scope 依据）以单行证据记入「检查点与集成」区块，不设专用模板区块。
+涉及整链验收命令（workspace verify、构建、全量测试等）的计划，定稿前先派一个廉价后台执行子代理（`quick` 档，工作目录为目标 workspace）在锚定 revision 上实跑「检查点与集成」中的终态验收命令本身，**不得用简化替身逃避门禁**；把实跑证据按 `omo-plan-structure` 的基线预验格式以单行记入「检查点与集成」区块，处置须映射 remediation task 或可验证的 out-of-scope 依据。
 
 - 无基线预验证据、或红灯缺处置映射的计划**不得送交审查**。
 - 规划环境无法派发子代理时，在计划中显式标注「基线未验」，由 Atlas 在首个 wave 前补验后才能开工。
@@ -39,8 +39,7 @@
 
 ### 原子单位（全局约定）
 
-- 原子单位分两级：**步骤级**=单 owner + 单写域 + 单二元验收检查（比它更细的拆分禁止）；**释放级**=检查点（发布、回退与整体验收在此）。
-- 一个可独立发布、回退与验收的行为意图 + 一组 owned 产物；实现、直接测试与使该行为成立所必需的调用方**必须同属一个 task/todo**；不按操作步骤拆成微任务。
+- 原子单位分两级：**步骤级**=单 owner + 单写域 + 单二元验收检查（比它更细的拆分禁止）；**释放级**=检查点（发布、回退与整体验收在此）；原子单位定义与非原子举证要素以 `omo-plan-structure` 为准。
 - test-first 任务的前置红测试 task 与可选后置补测试 task 各为独立 task，实现 task 仍含直接测试；测试时序由 Momus 审查裁决，本节只定义计划中的写法。tests-after 任务不削弱上游 failing-first proof 义务（执行期走 Manual-QA failing proof 通道）。
 - 不同产品 owner、failure family 或可独立回退结果默认拆开。
 - 共享契约由单一 owner 先冻结，消费方在契约稳定后按 owner 并发。
@@ -58,11 +57,7 @@
 
 ### 「非原子」举证标准
 
-- 以「共享同一推理、核心不变量、未冻结接口、只能整体验收」为由将两个以上可独立发布结果并入单一 owner 时，必须按「非原子」同标准举证，否则按无证据串行处理。
-- 确实无法拆分的合并必须标注「非原子」并举证：
-  - 点名具体共享不变量、未冻结接口或不可分割验收命令；
-  - 说明反事实拆分后哪个中间状态无法独立通过；
-  - 列出统一 owner 的必要性。
+- 以「共享同一推理、核心不变量、未冻结接口、只能整体验收」为由将两个以上可独立发布结果并入单一 owner 时，必须按 `omo-plan-structure` 的举证三要素逐项举证，否则按无证据串行处理。
 
 ## 并发与路由
 
@@ -75,7 +70,7 @@
 3. 接口与验收在 wave 内冻结。
 4. 每个 task 有行为级二元验收。
 5. worktree 及端口、数据库、缓存、临时目录和生成目录等可变资源已隔离。
-6. 并行确实缩短关键路径、隔离上下文或需要不同专业契约——须附墙钟论证：串行和 vs max(并行)+启动税（新 worktree 的环境初始化与基线验证成本）×lane 数，启动税大于并行节省时并入现有 lane；lane 数 ≤ 可独立验收 owner 数 + 唯一 integration lane，机械任务共享 lane，不得因文件多或任务多开 lane。
+6. 并行确实缩短关键路径、隔离上下文或需要不同专业契约——须附墙钟论证：串行和 vs max(并行)+启动税（新 worktree 的环境初始化与基线验证成本）×lane 数，启动税大于并行节省时并入现有 lane；lane 数上限与共享规则以 `omo-plan-structure` 为准。
 
 > **任一条件不成立即改为 single-owner 或 pipeline，不得按文件数量机械拆分。**
 
@@ -83,18 +78,18 @@
 
 - Task 契约按 **wave 分组**呈现，每个 wave 一个小节，标题含分类（如 `Wave A: test-freeze` / `Wave B: impl` / `Wave C: test-supplement` / `Wave D: integration`）；按步骤类型或风险类分割 wave，同类 task 归同 wave，wave 间按依赖串行、wave 内按预算并发。
 - 每个 wave 节**自带并发举证**：逐条说明并行六条件如何满足（输出依赖/唯一 owner/接口冻结/二元验收/资源隔离/关键路径墙钟论证），并声明本 wave 并发数（不超过 `concurrency_budget`）。
-- 全局「并发矩阵」保留为机器索引（task 恰好出现一次、硬前驱可解析、无环、cohort 归属），与 wave 节必须一致；Atlas 以 wave 为派发单元，wave 上直接消费并发举证，不依赖上下文记忆矩阵。
+- 全局「并发矩阵」保留为机器索引并与 wave 节保持一致（结构约束以 `omo-plan-structure` 为准）；Atlas 以 wave 为派发单元，wave 上直接消费并发举证，不依赖上下文记忆矩阵。
 
 ### 并发矩阵
 
-计划必须包含机器可消费的 `## 并发矩阵` 区块，区块 schema 与结构约束（逐 task 字段、task 恰好出现一次、硬前驱可解析、无环、`cohorts: none` 豁免、`concurrency_budget` 声明）以 `omo-plan-structure` 为准：
+计划必须包含机器可消费的 `## 并发矩阵` 区块，区块 schema 与结构约束（含 `cohorts: none` 豁免与 `concurrency_budget` 声明）以 `omo-plan-structure` 为准：
 
 - 凡满足并行条件的 task **必须归入同一 cohort**，贯彻蜂群并发，不得无证据默认串行。
 - 执行期结构性 REMAP（拆分、合并、owner、依赖与顺序调整）以账本 `plan_revision`（`topology_remap`）同步更新矩阵投影，保持满足结构标准且与 wave 节一致。
 
 ### Task 契约
 
-每个实施 task 的必填字段与各字段 schema（`step_type`、`目的`、`owner`、`acceptance_contract` 及其 `ID` / `supersedes` / `contract_revision` / `checklist_hash` append-only 体制、`环境 preflight`、`上下文胶囊` revision 锚、`终止状态` 断点胶囊、条件字段 `reviewer 安排` 等）以 `omo-plan-structure` 为准，本文不复制。
+每个实施 task 的必填字段与各字段 schema 以 `omo-plan-structure` 为准，本文不复制。
 
 - 规划期探索结论必须浓缩进对应 task 的上下文胶囊，使执行期子代理无需全量重探。
 - `reviewer 安排` 的命中条件见「资源与 reviewer」。
@@ -117,13 +112,13 @@
 
 ## 检查点与验收
 
-计划必须显式包含检查点声明；检查点是计划**唯一验收节点来源**，Atlas 的验收节奏直接挂靠，不再另设重复节点。检查点声明格式（逐检查点的互斥 task 集合、放行条件与验收命令，或 `checkpoints: none` 加依据）与证据强度标注要求以 `omo-plan-structure` 为准。
+计划必须显式包含检查点声明；检查点是计划**唯一验收节点来源**，Atlas 的验收节奏直接挂靠，不再另设重复节点。检查点声明格式与证据强度标注要求以 `omo-plan-structure` 为准。
 
 - 审查产生的注（含 Oracle `handoff-to-momus` 移交建议）由计划修订者处置，执行期产生的注可由 Atlas 按执行侧分级裁决现场处置、不再一律回到计划修订者：被采纳的注落到具体 acceptance_contract 条目或检查点断言，未落位视为审查未闭环；丢弃的注记录一句理由。
 
 ## 工作区与交付
 
-- `workspaces` 区块的声明 schema（`vcs` / `mode` / `workspace_lane`、主分支与计划/账本存放路径标注、`authorization_source`、worktree 命名、integration workspace、workspace 环境创建与视觉巡查类 task 的 env 复制）以 `omo-plan-structure` 为准，本文不复制。
+- `workspaces` 区块的声明 schema（含主分支与计划/账本存放路径标注、视觉巡查类 task 的 env 复制）以 `omo-plan-structure` 为准，本文不复制。
 - task 路由标注：每个可提前确定路由的 task：
   - 写明 `category` 或 `subagent_type` **二选一**及 `load_skills`；
   - 无法确定时标注带原因的 `executor_judgment`，**不得同时指定** `category` / `subagent_type`；
@@ -146,4 +141,4 @@
 ## 消费者与文档稳定性
 
 - 计划同时面向两个消费者编写：momus 据此审查（需求与目标可追溯、原子化与并发矩阵可核对、非原子标注有举证），Atlas 据此执行（cohort、并发预算与检查点可直接消费，无需二次推导）；任一消费者无法直接使用的内容视为计划缺陷。
-- 计划正文的区块构成、结构约束与计划/账本分离体制（五个静态区块、动态状态不写入计划、append-only 账本、正文承载当前生效投影、正文与账本摘要不一致即 fail-closed）以 `omo-plan-structure` 为准，本文不复制。
+- 计划正文的区块构成、结构约束与计划/账本分离体制以 `omo-plan-structure` 为准，本文不复制。

@@ -183,13 +183,14 @@ README 的「维护规范」节。
 
 - 状态：`active`
 - 决策：
-  - 计划结构体系（五个静态区块、各区块 schema、并发矩阵结构约束、
-    Task 契约字段、workspaces 声明含 D-026 主分支与 env 复制、
-    检查点声明、计划/账本分离）迁入 skills 仓 `omo-plan-structure`
-    作为单一标准。
+  - 计划结构体系（五个静态区块、各区块 schema、并发矩阵结构约束含
+    lane 上限、任务原子性契约、Task 契约字段、workspaces 声明含
+    D-026 主分支与 env 复制、检查点声明与基线预验证据格式、
+    计划/账本分离）迁入 skills 仓 `omo-plan-structure` 作为单一标准。
   - Prometheus 开始规划工作前、Momus 开始审查任何计划版本前必须先
-    加载该 skill；两个 prompt 不再各自复制结构 schema，结构类不一致
-    以 skill 裁决。生成方法与审查裁决规则仍留在各自 prompt。
+    加载该 skill；两个 prompt 不再各自复制结构 schema（含字段枚举、
+    结构约束示例与原子性定义），结构类不一致以 skill 裁决。生成方法
+    与审查裁决规则仍留在各自 prompt。
 - 验收：两 prompt 均含会话启动门且无结构 schema 复制残留；skill 含
   五区块完整 schema；后续字段增改只改 skill 一处，prompt 不再出现
   字段名漂移（如 `内聚结果` / `行为验收` 旧名）。
