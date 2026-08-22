@@ -93,6 +93,7 @@ README 的「维护规范」节。
 - 状态：`active`
 - 决策：计划文档只含静态契约区块；checkbox、回执、尝试次数、review 结论等动态状态写入独立 append-only 执行账本（条目带 revision 锚），会话恢复 = 重放尾部，禁止原地编辑。主上下文只保留活动 cohort 的紧凑索引。
 - 验收：计划文件在执行期不因状态更新而膨胀；崩溃续走能从账本尾部重建状态。
+- 修订（2026-08-22，D-032）：task 行勾选状态随 `ACCEPTED` 投影为 `- [x]`（属计划正文当前生效投影），其余动态状态仍只在账本。
 
 ### D-015 治理改动必须可证伪
 
@@ -296,6 +297,43 @@ README 的「维护规范」节。
   adaptive-execution ~150；grep 无「四阶段验证、INITIAL、DELTA、
   CARRIED、NOT_EVALUATED、review packet」残留（本文件历史记载除外）；
   `sync-agents.ps1 -Check` 通过。
+
+### D-032 计划产物格式减负（分级与字段精简）
+
+- 状态：`active`
+- 决策：
+  - 计划分级：≤3 task、单 lane、未命中高风险特征（公共接口/契约
+    变化、架构或数据结构变化、不可逆动作、权限/安全边界——分级
+    唯一判源）走轻量三节（摘要含 core 缺省与假设子行、节尾 Workspaces
+    一行 / 任务清单 / 终态验收含具名 gate 与 F1 行）；否则完整五
+    区块。执行期超判据以一次 `topology_remap` 升格重排，条目 ID 与
+    `checklist_hash` 不变。
+  - Task 契约字段 10 → 5：标题行（`[test-freeze]`/`[test-supplement]`/
+    `[integration]` 前缀替代 step_type）+ 路由行（`Recommended task
+    executor category:` 字面前缀保留作上游锚，execution_mode 同行
+    括注）+ 上下文胶囊 + 验收条目 + 写域 + 条件字段（环境
+    preflight / reviewer 安排 / 放弃-风险判据）。
+  - 验收条目机械语法：`- <ID>：<二元条件> → 命令=<命令> 预期=<结
+    果>` 一行一条；`checklist_hash` = 条目按 ID 排序的原文行串接；
+    高风险 task 追加 `scope=`（Tier 1 scope 扩展参照落点改写域 +
+    scope）。CAS 三元组与 append-only 不变。
+  - 拓扑唯一事实源 = 并发矩阵（列含 owner，账本 owner 取矩阵值）；
+    Task 契约删除硬前驱/owner/lane/验证命令/目的，验收只写一遍。
+  - 计划级通用约定（通用禁止、终止状态断点胶囊、package_manager、
+    默认 load_skills）以 Task 契约区块引言一次承载。
+  - 参考吸收：摘要「假设」子行与「不做的事」、计划级一行提交意
+    图、放弃/风险判据（预授权 revert 触发线）、收尾 gate 具名。
+  - 体积判据：固定字段仪式 ≤5 行/task、验收每条 1 行，task 参考
+    区间 12-20 行；胶囊密度不设上限。
+- 上游差异说明（D-021 先例式记录）：本地计划不经上游 scaffold 生
+  成，上游模板结构自检不适用；todo 级 Commit/QA 行由验收条目与执
+  行期提交治理承接（上游 start-work 不消费 todo 级 Commit 行，已核
+  实）；task 行保留上游 checkbox 语法与 category 字面前缀。
+- 验收：两仓 grep 无旧字段残留（step_type/验证命令/QA happy 等，
+  本文件历史记载除外）；checklist_hash 切分语法在 skill 单一定义；
+  轻量 Workspaces 一行含最小字段集（vcs/mode/主分支+路径或
+  authorization_source，worktree 时含 lane 路径与分支）；plan-linter
+  （若存在）schema 对新格式核对通过，未落地则豁免。
 
 ## 已废弃决策
 

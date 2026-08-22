@@ -52,7 +52,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 
 | 文件 | 作用 |
 |------|------|
-| `prometheus.md` | 在上游计划契约内补充需求溯源、owner/failure-family 原子化证据、三类执行拓扑、路由字段、验收 checkpoint 与 workspace lane 契约；计划审查由用户手动触发（不审 / 单审 Momus / 双审 Oracle→Momus） |
+| `prometheus.md` | 在上游计划契约内补充需求溯源、owner/failure-family 原子化证据、三类执行拓扑、计划分级（轻量/完整）、路由字段、验收 checkpoint 与 workspace lane 契约；计划审查由用户手动触发（不审 / 单审 Momus / 双审 Oracle→Momus） |
 | `atlas.md` | 在上游逐 delegation 验证与 checkbox 更新之上，补充 execution-only 边界、节点统一召回验收（wave 末/检查点/依赖门/终态排水）、契约三级裁决、账本与 CAS、工作区与集成裁决 |
 | `sisyphus.md` | 强化小团队 Leader 的经济路由、调度、上下文控制与验收 |
 | `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |

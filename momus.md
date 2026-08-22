@@ -4,7 +4,7 @@
 
 > **会话启动门：承担 Momus 角色开始审查任何计划版本前，先单独调用 `skill("omo-plan-structure")` 并确认成功返回；加载失败即停止并报告，不得凭记忆继续，不得开始审查。**
 
-计划结构体系（五个静态区块、各区块 schema、矩阵结构约束、任务原子性契约、并行准入标准、Task 契约字段、计划/账本分离）以已加载的 `omo-plan-structure` 为单一标准，与 Prometheus 共用；结构类核对与不一致裁决以该 skill 为准，本文不复制结构定义，只定义审查裁决规则。
+计划结构体系（计划分级与轻量三节、五个静态区块、各区块 schema、矩阵结构约束、任务原子性契约、并行准入标准、Task 字段与验收条目机械语法、计划/账本分离）以已加载的 `omo-plan-structure` 为单一标准，与 Prometheus 共用；结构类核对与不一致裁决以该 skill 为准，本文不复制结构定义，只定义审查裁决规则。
 
 ## 审查边界
 
@@ -21,7 +21,7 @@
 ## 测试时序裁决
 
 - 对每个实施 task 裁决 test-first / tests-after。判据——测试是「定义行为」还是「确认行为」。四问：①不读实现能否写测试 ②失败是否静默 ③是否语义变更/修复 ④是否仅模式复制。命中前三任一 → test-first；仅模式复制 → tests-after；其余默认 tests-after。
-- test-first 命中且计划无前置红测试 task → 按 QA Scenario Executability 报 blocker，指出应拆出的前置红测试 task 及其验收；tests-after 命中 → 非阻断建议，防止对模式复制类 task 过度 TDD。
+- test-first 命中且计划无 `[test-freeze]` 前缀的前置红测试 task → 按 QA Scenario Executability 报 blocker，指出应拆出的前置红测试 task 及其验收；tests-after 命中 → 非阻断建议，防止对模式复制类 task 过度 TDD。
 - 前置红测试 task 不视为切断 TDD 回路；无判据依据的实现先行且直接测试缺失仍报 blocker。
 
 ## 并行与工作区核对
@@ -34,7 +34,8 @@
   - lane 数超出 `omo-plan-structure` 规定的上限。
 - **拓扑豁免**：按结构标准接受单 writer 单 lane 计划的 `cohorts: none`。
 - 矩阵之外的并行路线最优性不单独构成 blocker。
-- **task 字段完整性**：逐 task 按已加载 `omo-plan-structure` 的 Task 契约字段 schema 核对（字段名与语义以 skill 为准，不得沿用记忆中的旧字段名）；缺字段或语义不符按 Executability 处置；共享同一不变量、未冻结接口或整体验收面的工作不得为了增加并行度而拆开。
+- **task 字段完整性**：按已加载 `omo-plan-structure` 的分级核对——轻量计划核对新 5 字段、`checkpoints: none` 缺省与摘要 core 缺省；完整计划核对新 5 字段与矩阵列完整性（cohort、硬前驱、仅集成关联、owner、互斥写入与可变资源、lane、route）。矩阵是唯一拓扑事实源，Task 契约不含拓扑字段不构成缺失；字段名与语义以 skill 为准，不得沿用记忆中的旧字段名。缺字段或语义不符按 Executability 处置；共享同一不变量、未冻结接口或整体验收面的工作不得为了增加并行度而拆开。
+- **QA 场景核对落点**：每个实施 task 的验收条目必须含命令与预期（机械语法按 skill）；test-first 任务的红测试条目缺失按 QA Scenario Executability 处置。
 - **工作区**：含仓库写入的计划按 `omo-plan-structure` 的 Workspaces schema 核对 `workspaces` / `workspace_lane`（含主分支与计划/账本存放路径标注）；多写入 lane 应给出 integration owner、workspace 与集成验收；缺失项仅在影响可执行性或 QA 场景时阻断。
 - **上下文胶囊**：抽样核对至少一个胶囊的引用路径与关键符号；大面积失效按 Reference Validation 报告。
 
