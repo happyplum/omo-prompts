@@ -335,6 +335,20 @@ README 的「维护规范」节。
   authorization_source，worktree 时含 lane 路径与分支）；plan-linter
   （若存在）schema 对新格式核对通过，未落地则豁免。
 
+### D-033 跨会话历史检索归入发现委托
+
+- 状态：`active`
+- 决策：父协调级不自行多轮翻扫既往会话（`session_search` /
+  `session_list` / `session_read` 的历史溯源）；跨会话检索默认派后台
+  子代理执行，单证据目标、返回结论摘要与定位引用（session_id 与轮
+  次）；父级仅允许对已知 `session_id` 的单次定向查证，连续两次检索
+  无结论即改派或放弃该线索。由 `omo-adaptive-execution`「发现委托」
+  单一承载，各 prompt 不复制。
+- 触发证据：真实会话中父级为溯源「状态下发」改造范围，query 漂移
+  连发 7+ 次 `session_search` / `session_read`，原始会话输出直接灌入
+  主上下文，构成污染并带偏后续检索。
+- 验收：skill 发现委托表含会话溯源行与反例行；prompts 无复制。
+
 ## 已废弃决策
 
 ### S-001 本地优先级声明
