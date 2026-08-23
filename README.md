@@ -20,7 +20,7 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 ## 设计定位
 
 - `prompts/` 是本地角色增强面，维护角色边界、职责分工、入口门禁和 handoff 契约；同时维护全局 `AGENTS.md` 的可提交源文件。
-- [`DECISIONS.md`](DECISIONS.md) 是用户长期需求与本地决策的权威入口；修改角色行为前先核对其中的 `active` / `superseded` 状态，避免回退到已废弃方向。
+- [`DECISIONS.md`](DECISIONS.md) 是用户长期需求与本地决策的权威入口，覆盖本仓与同级 `../skills/` 仓（两仓共享单一决策入口，skills 不另设决策文件）；修改任一仓角色/skill 行为前先核对其中的 `active` / `superseded` 状态，避免回退到已废弃方向。
 - 通用治理、task 契约和可复用规范由 `../skills/`、运行时 skills 与 `runtime/AGENTS.md` 承载；`../AGENTS.md` 是由同步脚本生成的运行时副本。
 - `~/.omo/omo.jsonc` 只使用 `file://` 形式的 `prompt_append`；每个 agent 的追加内容放在同名 Markdown 文件中，便于独立回顾、审查和 Git 记录。
 
