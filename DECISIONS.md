@@ -6,9 +6,8 @@
 纯维护规范（写作标准、提交流程、结构约定）不记录于此，直接维护在
 README 的「维护规范」节。
 上游行为事实以 README 中的固定兼容基线为准。
-skills 仓的 skill 行为决策自 2026-08-23 起由该仓自己的 DECISIONS.md
-承载（两仓独立演进、各自自包含）；本文件此前涉及 skills 的历史条目
-（D-027~D-033）保留作 prompt 侧溯源。
+skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，本文件
+不记录 skill 行为裁决。
 
 ## 决策优先级
 
@@ -176,183 +175,55 @@ skills 仓的 skill 行为决策自 2026-08-23 起由该仓自己的 DECISIONS.m
 - 验收：本改动按 D-015 附证伪条件——3 个 canary（Tier 1 scope 扩展、Tier 2 语义变化、Tier 3 公共契约各一例）且分析会话记录 `prompt_rev`；scorecard 至少 4 项度量：自主裁决率、Tier 1 误判升级率、计划/账本摘要不一致次数、修订后再验收合规率。
 - 修订（2026-08-22，D-031）：INITIAL/DELTA/CARRIED/NOT_EVALUATED 复审分级与 review packet 体系删除，复审统一为温链 diff-only；三级裁决、CAS 三元组、append-only 与 fail-closed 保留。
 
-### D-026 计划标明主分支路径与巡查 env 复制
-
-- 状态：`active`
-- 决策：
-  - `vcs: git` 的计划必须在 `workspaces` 标明主分支及计划文件、账本在
-    主分支下的存放路径；worktree lane 自该主分支创建，计划与账本权威
-    版本只保留在主工作区该路径，lane 内不建副本（补足 D-024 的定位标注）。
-  - 含「启动服务进行手动视觉巡查或人工运行时验证」的 task，计划必须
-    写明从主工作区复制项目相应 env 文件到目标 workspace（逐个列出
-    文件名、源路径与目标路径），复制动作列入该 task 的 `环境 preflight`；
-    计划只写路径不写机密值。
-- 验收：git 计划的 `workspaces` 含主分支与主分支下计划/账本存放路径；
-  视觉巡查类 task 的 `环境 preflight` 含 env 复制条目且正文无机密值。
-
 ### D-027 计划结构单一标准 skill 化
 
 - 状态：`active`
-- 决策：
-  - 计划结构体系（五个静态区块、各区块 schema、并发矩阵结构约束含
-    lane 上限、任务原子性契约、Task 契约字段、workspaces 声明含
-    D-026 主分支与 env 复制、检查点声明与基线预验证据格式、
-    计划/账本分离）迁入 skills 仓 `omo-plan-structure` 作为单一标准。
-  - Prometheus 开始规划工作前、Momus 开始审查任何计划版本前必须先
-    加载该 skill；两个 prompt 不再各自复制结构 schema（含字段枚举、
-    结构约束示例与原子性定义），结构类不一致以 skill 裁决。生成方法
-    与审查裁决规则仍留在各自 prompt。
-- 验收：两 prompt 均含会话启动门且无结构 schema 复制残留；skill 含
-  五区块完整 schema；后续字段增改只改 skill 一处，prompt 不再出现
-  字段名漂移（如 `内聚结果` / `行为验收` 旧名）。
+- 决策：Prometheus 开始规划工作前、Momus 开始审查任何计划版本前必须先加载 `omo-plan-structure`；两个 prompt 不复制结构 schema（字段枚举、结构约束示例、原子性定义），结构类不一致以 skill 裁决；生成方法与审查裁决规则留在各自 prompt。
+- 验收：两 prompt 均含会话启动门且无结构 schema 复制残留，prompt 不出现字段名漂移（如 `内聚结果` / `行为验收` 旧名）。
 
 ### D-028 Momus 拆解与并发增强分析
 
 - 状态：`active`
-- 决策：
-  - 并行准入六条件迁入 `omo-plan-structure`，与任务原子性契约同级
-    共享；Prometheus 组织 wave 与 Momus 识别并发使用同一准入标准。
-  - Momus 在结构核对外附加建设性分析：逐 task 反事实拆解（能否进
-    一步拆出独立可发布/验收/回退的结果）与并发识别（被无证据串行化
-    的 task、cohort 归属与 wave 重组建议）。产出为非阻断建议、不新
-    设 blocker 类别，与 blocker 同粒度输出，随初审执行，复审仅对
-    diff 引入的新捆绑/串行化增量补做。
-- 验收：两 prompt 引用同一准入标准且无六条件复制残留；Momus 建议可
-  被计划方直接落位（拆分边界+验收 / cohort / wave 重组），无建议被
-  升级为 blocker 的记录（除非独立命中官方四类判据）。
+- 决策：Momus 在结构核对外附加建设性分析：逐 task 反事实拆解（能否进一步拆出独立可发布/验收/回退的结果）与并发识别（被无证据串行化的 task、cohort 归属与 wave 重组建议），判据对照 `omo-plan-structure` 的原子性契约与并行准入标准。产出为非阻断建议、不新设 blocker 类别，与 blocker 同粒度输出，随初审执行，复审仅对 diff 引入的新捆绑/串行化增量补做。
+- 验收：Momus 建议可被计划方直接落位（拆分边界+验收 / cohort / wave 重组），无建议被升级为 blocker 的记录（除非独立命中官方四类判据）。
 
 ### D-029 移除蜂群概念，收敛为最小化拆解与低档并行
 
 - 状态：`active`
-- 决策：
-  - 上级已把并行约束为目标形态：上游 `start-work` sizing 规则要求可
-    独立拆的工作用 `quick` / `unspecified-low` 低档 worker 单批并行、
-    共享同一推理的工作保持整体不强行拆分；全局 `AGENTS.md` 以反过度
-    工程与原子派发约束派发规模。本地「蜂群」术语不承载额外行为，只
-    剩最大化代理数的误导暗示，全面移除。
-  - 替代表述：拆解以任务内聚与原子性契约为限（最小化拆解，不为并行
-    制造任务）；相互独立的 task 用最低足够档位 worker 并发执行，不追
-    求代理数量。该立场由 `omo-adaptive-execution` 概述承载，各 prompt
-    只保留各自的行为规则。
-  - cohort 归属、并行准入六条件、lane 上限与 `concurrency_budget`
-    预算体制不变。
-- 验收：除本条历史记载外，本地 prompts 与 skills 全文无「蜂群」残留；
-  未新增数值上限、门禁或 reviewer 要求。
+- 决策：本仓 prompt（prometheus / sisyphus / README）移除「蜂群」术语——上级已把并行约束为「按独立性拆解 + 低档 worker 并发」，本地术语不承载额外行为，只剩最大化代理数的误导暗示；cohort 归属与 `concurrency_budget` 预算体制不变，执行侧立场由 skills 仓承载。
+- 验收：本仓全文无「蜂群」残留（本条历史记载除外）；未新增数值上限、门禁或 reviewer 要求。
 
-### D-030 经济路由、失败升档与测试链流水
+### D-030 路由明确性审查与测试链流水
 
 - 状态：`active`
 - 决策：
-  - 经济优先 sizing：内聚单元超出 `quick` / `unspecified-low` 可执行
-    尺寸时，优先沿独立 owner / failure family / 可独立验收边界继续拆
-    小；共享同一推理、不可拆的直接路由高档（D-016 / D-022 下限不
-    变），不用低档硬试。由 `omo-plan-structure` 原子性契约承载。
-  - 失败升档协议：归因前置排除缺上下文/依赖/环境后仅能力不足升档；
-    `quick → unspecified-low → unspecified-high` 线性，之上按失败性
-    质选 `deep` / `ultrabrain`；升档前复核不可拆、补
-    `WHY_NOT_LOWER_COST`、新会话注入断点胶囊续用原 `task_id`；每次
-    升档计入补救预算（默认 2 次），顶档仍失败转 blocked / oracle /
-    用户。由 `omo-adaptive-execution` 承载。
-  - 路由明确性审查：Momus 初审穷举维度新增矩阵 route 三选一核对、
-    `load_skills` 匹配与高价路由举证核对。
-  - Task 契约精简：写域三字段（`允许输入` / `唯一可写产物` /
-    `禁止范围`）合并为 `写域`（读域由上下文胶囊承载）；删除与
-    acceptance_contract 重复的 `可观察验收` / `必要证据`；删除
-    `终止状态`（blocked 附断点胶囊的 worker 义务移入
-    `omo-adaptive-execution` 委托契约）；`环境 preflight` 改条件字段
-    （D-026 场景保留）。
-  - 测试链流水：wave 从类型批次（同类归同 wave、wave 间串行）改为
-    依赖就绪分组，`test-freeze` 可与写域互斥的 `impl` 同 wave 并行，
-    测试链按 task 流水；最小波数约束防碎片化。
-  - 研究溯源：TDD 四问判据与 Fucci et al.（ICSE 2017：test-first/
-    test-last 整体差异小、循环粒度关键）及 Nagappan et al.（2008：
-    工业案例缺陷密度 -40~90%）结论吻合，momus 判据不改；Cognition
-    「共享推理不拆、上下文碎片化」与编排 pipeline 模式支持 sizing
-    与流水裁决。
-- 验收：两仓 grep 无被删字段名与「同类 task 归同 wave」残留；断点
-  胶囊义务在 skill 委托契约有载体；Task 契约字段清单单一来源。
+  - 路由明确性审查：Momus 初审穷举维度新增矩阵 route 三选一核对、`load_skills` 匹配与高价路由举证核对。
+  - 测试链流水：Prometheus 的 wave 组织从类型批次（同类归同 wave、wave 间串行）改为依赖就绪分组，`test-freeze` 可与写域互斥的 `impl` 同 wave 并行，测试链按 task 流水；最小波数约束防碎片化。
+  - 研究佐证：TDD 四问判据与 Fucci et al.（ICSE 2017）及 Nagappan et al.（2008）结论吻合，momus 判据不改；编排 pipeline 模式支持流水裁决。
+- 验收：本仓无「同类 task 归同 wave」残留；Momus 穷举维度含路由标注明确性。
   canary 对照按 D-015 待首个真实计划执行时补。
 
 ### D-031 治理栈减负（节点统一召回与判据化）
 
 - 状态：`active`
 - 决策：
-  - 验收节奏：删除「每个 delegation 返回先完成四阶段验证与 checkbox
-    更新才能补位」的逐任务仪式；预算内持续 fan-out，验收集中在 wave
-    末、检查点、依赖解锁前、终态排水四类节点；预算口径（运行中写入
-    worker + 未验收产物，默认 3/4）为强制背压；高风险边界完成即验收。
-  - 状态机与复审简化：COLLECTED→VERIFYING→ACCEPTED 三态收敛为
-    `ACCEPTED(revision)` 单门；删除 INITIAL/DELTA/CARRIED/
-    NOT_EVALUATED/review packet 体系，复审统一温链 diff-only；CAS
-    三元组（artifact_revision/contract_revision/checklist_hash）保留。
-  - 账本精简：task 条目 15→7 字段，`plan_revision` 事件 ~20→7 字段；
-    摘要一致 fail-closed 保留。
-  - 计划审查用户触发：Prometheus 计划完成后询问用户选择不审 / 单审
-    Momus / 双审 Oracle→Momus，命中高风险特征建议双审。
-  - AGENTS.md 减半重构：195→约 75 行，六套规则并为四节，流程性条款
-    改判据性条款，细则由 skills 承载。
-  - 计划正文减重：删逐 wave 差异式举证（矩阵 + 一行声明），Prometheus
-    章节压缩约三分之一；wave 为依赖就绪集合（D-030）不变。
-  - 参照：Codex/Claude 编排模式（controller 侧验证、并行 fan-out +
-    统一收集）；Codex 社区「compaction 丢验收目标→无限循环」证明
-    acceptance_contract 持久化必须保留；「orchestrator 频繁打断子代理」
-    证明逐 task 验收节奏应废弃。
-- 验收：核心栈行数 AGENTS ~75 / atlas ~105 / prometheus ~95 /
-  adaptive-execution ~150；grep 无「四阶段验证、INITIAL、DELTA、
-  CARRIED、NOT_EVALUATED、review packet」残留（本文件历史记载除外）；
-  `sync-agents.ps1 -Check` 通过。
+  - 验收节奏（atlas）：删除「每个 delegation 返回先完成四阶段验证与 checkbox 更新才能补位」的逐任务仪式；预算内持续 fan-out，验收集中在 wave 末、检查点、依赖解锁前、终态排水四类节点；预算口径（运行中写入 worker + 未验收产物，默认 3/4）为强制背压；高风险边界完成即验收。
+  - 状态机与复审简化（atlas）：COLLECTED→VERIFYING→ACCEPTED 三态收敛为 `ACCEPTED(revision)` 单门；删除 INITIAL/DELTA/CARRIED/NOT_EVALUATED/review packet 体系，复审统一温链 diff-only；CAS 三元组保留。
+  - 账本精简（atlas）：task 条目 15→7 字段，`plan_revision` 事件 ~20→7 字段；摘要一致 fail-closed 保留。
+  - 计划审查用户触发（prometheus）：计划完成后询问用户选择不审 / 单审 Momus / 双审 Oracle→Momus，命中高风险特征建议双审。
+  - AGENTS.md 减半重构：195→约 75 行，六套规则并为四节，流程性条款改判据性条款。
+  - 计划正文减重（prometheus）：删逐 wave 差异式举证（矩阵 + 一行声明），章节压缩约三分之一。
+  - 参照：Codex/Claude 编排模式（controller 侧验证、并行 fan-out + 统一收集）；「compaction 丢验收目标→无限循环」证明 acceptance_contract 持久化必须保留；「orchestrator 频繁打断子代理」证明逐 task 验收节奏应废弃。
+- 验收：AGENTS ~75 / atlas ~105 / prometheus ~95 行；本仓无「四阶段验证、INITIAL、DELTA、CARRIED、NOT_EVALUATED、review packet」残留（本文件历史记载除外）；`sync-agents.ps1 -Check` 通过。
 
-### D-032 计划产物格式减负（分级与字段精简）
+### D-032 计划产物格式减负
 
 - 状态：`active`
 - 决策：
-  - 计划分级：≤3 task、单 lane、未命中高风险特征（公共接口/契约
-    变化、架构或数据结构变化、不可逆动作、权限/安全边界——分级
-    唯一判源）走轻量三节（摘要含 core 缺省与假设子行、节尾 Workspaces
-    一行 / 任务清单 / 终态验收含具名 gate 与 F1 行）；否则完整五
-    区块。执行期超判据以一次 `topology_remap` 升格重排，条目 ID 与
-    `checklist_hash` 不变。
-  - Task 契约字段 10 → 5：标题行（`[test-freeze]`/`[test-supplement]`/
-    `[integration]` 前缀替代 step_type）+ 路由行（`Recommended task
-    executor category:` 字面前缀保留作上游锚，execution_mode 同行
-    括注）+ 上下文胶囊 + 验收条目 + 写域 + 条件字段（环境
-    preflight / reviewer 安排 / 放弃-风险判据）。
-  - 验收条目机械语法：`- <ID>：<二元条件> → 命令=<命令> 预期=<结
-    果>` 一行一条；`checklist_hash` = 条目按 ID 排序的原文行串接；
-    高风险 task 追加 `scope=`（Tier 1 scope 扩展参照落点改写域 +
-    scope）。CAS 三元组与 append-only 不变。
-  - 拓扑唯一事实源 = 并发矩阵（列含 owner，账本 owner 取矩阵值）；
-    Task 契约删除硬前驱/owner/lane/验证命令/目的，验收只写一遍。
-  - 计划级通用约定（通用禁止、终止状态断点胶囊、package_manager、
-    默认 load_skills）以 Task 契约区块引言一次承载。
-  - 参考吸收：摘要「假设」子行与「不做的事」、计划级一行提交意
-    图、放弃/风险判据（预授权 revert 触发线）、收尾 gate 具名。
-  - 体积判据：固定字段仪式 ≤5 行/task、验收每条 1 行，task 参考
-    区间 12-20 行；胶囊密度不设上限。
-- 上游差异说明（D-021 先例式记录）：本地计划不经上游 scaffold 生
-  成，上游模板结构自检不适用；todo 级 Commit/QA 行由验收条目与执
-  行期提交治理承接（上游 start-work 不消费 todo 级 Commit 行，已核
-  实）；task 行保留上游 checkbox 语法与 category 字面前缀。
-- 验收：两仓 grep 无旧字段残留（step_type/验证命令/QA happy 等，
-  本文件历史记载除外）；checklist_hash 切分语法在 skill 单一定义；
-  轻量 Workspaces 一行含最小字段集（vcs/mode/主分支+路径或
-  authorization_source，worktree 时含 lane 路径与分支）；plan-linter
-  （若存在）schema 对新格式核对通过，未落地则豁免。
-
-### D-033 跨会话历史检索归入发现委托
-
-- 状态：`active`
-- 决策：父协调级不自行多轮翻扫既往会话（`session_search` /
-  `session_list` / `session_read` 的历史溯源）；跨会话检索默认派后台
-  子代理执行并加载 `opencode-subagent-log-triage`（复用其 session
-  API、SQLite 兜底与结构化报告格式），单证据目标、返回结论摘要与
-  定位引用（session_id 与轮次）；父级仅允许对已知 `session_id` 的
-  单次定向查证，连续两次检索无结论即改派或放弃该线索。由
-  `omo-adaptive-execution`「发现委托」单一承载，各 prompt 不复制。
-- 触发证据：真实会话中父级为溯源「状态下发」改造范围，query 漂移
-  连发 7+ 次 `session_search` / `session_read`，原始会话输出直接灌入
-  主上下文，构成污染并带偏后续检索。
-- 验收：skill 发现委托表含会话溯源行与反例行；prompts 无复制。
+  - Prometheus 编写前按 `omo-plan-structure` 的分级判据判级并写入计划首行；轻量路径跳过矩阵与检查点全套，执行期超判据按 skill 升格规则处理。
+  - 「验收只写一遍」禁令：凡验收条目已含的命令与预期，禁止在其他位置复述；通用证据由计划级通用约定一次承载。
+  - Momus 按分级核对新字段与矩阵列完整性，QA 场景核对落点迁至验收条目；矩阵为唯一拓扑事实源，Task 契约不含拓扑字段不构成缺失。
+- 验收：本仓无被删字段名残留（step_type / 验证命令 / QA happy 等，本文件历史记载除外）。
 
 ## 已废弃决策
 
