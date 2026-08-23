@@ -340,10 +340,11 @@ README 的「维护规范」节。
 - 状态：`active`
 - 决策：父协调级不自行多轮翻扫既往会话（`session_search` /
   `session_list` / `session_read` 的历史溯源）；跨会话检索默认派后台
-  子代理执行，单证据目标、返回结论摘要与定位引用（session_id 与轮
-  次）；父级仅允许对已知 `session_id` 的单次定向查证，连续两次检索
-  无结论即改派或放弃该线索。由 `omo-adaptive-execution`「发现委托」
-  单一承载，各 prompt 不复制。
+  子代理执行并加载 `opencode-subagent-log-triage`（复用其 session
+  API、SQLite 兜底与结构化报告格式），单证据目标、返回结论摘要与
+  定位引用（session_id 与轮次）；父级仅允许对已知 `session_id` 的
+  单次定向查证，连续两次检索无结论即改派或放弃该线索。由
+  `omo-adaptive-execution`「发现委托」单一承载，各 prompt 不复制。
 - 触发证据：真实会话中父级为溯源「状态下发」改造范围，query 漂移
   连发 7+ 次 `session_search` / `session_read`，原始会话输出直接灌入
   主上下文，构成污染并带偏后续检索。
