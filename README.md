@@ -8,7 +8,7 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 
 - `prometheus.md` → 大型任务的探索与规划增强
 - `atlas.md` → 大型任务的可靠执行增强
-- `sisyphus.md` → 小团队 Leader 的单批蜂群并发、经济路由与批末验收增强
+- `sisyphus.md` → 小团队 Leader 的蜂群滑动并发、经济路由与排水点验收增强
 - `hephaestus.md` → 单目标自主深度编码增强
 - `momus.md` → 证据驱动、原子化与并行路线校验、可收敛复审的计划审核
 - `oracle.md` → 按需只读的架构与调试顾问
@@ -29,7 +29,7 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 并发权威规则由 shared skills（`omo-adaptive-execution`）承载，按路径分两种节奏：
 
 - **计划路径（Atlas/矩阵）——预算波次制**：默认最低成本单一 owner；独立产出/失败/验收 + 写入互斥 + 环境隔离 + 接口冻结 + 真实关键路径收益才进 parallel wave；有向依赖用 pipeline，共享核心不变量、未冻结接口、循环依赖或整体验收用 single-owner。Wave 是派发 epoch 而非验证屏障；并发预算口径（运行中写入 worker + 已完成未验收产物，**默认 3**、**隔离充分时可至 4**、计划 `concurrency_budget` 为**计划路径唯一覆盖入口**）与验收/reviewer 细则见 `atlas.md`。
-- **日常路径（Sisyphus）——单批蜂群**：互不依赖、写域不重叠的 ready 任务按依赖就绪集在同一响应一次发完（后台派发、批末统一验收、高风险即验、单批在飞上限 6），细则见 `sisyphus.md`；写域互斥、命名依赖串行、共享推理不拆为两路径共用硬边界。
+- **日常路径（Sisyphus）——蜂群滑动并发**：互不依赖、写域不重叠的 ready 任务按依赖就绪集单批爆发（后台派发），单个完成即释放额度滑动补位（运行中 + 未验收 ≤ 6），验收集中在排水点、高风险即验，细则见 `sisyphus.md`；写域互斥、命名依赖串行、共享推理不拆为两路径共用硬边界。
 - `INTEGRATE` 是本地状态；`integration task` 由唯一 integration owner 在 integration workspace 中执行，完成后进入官方 `Final Wave`——二者共同构成唯一全局收敛阶段，但不是同一对象。
 
 ### 技术债
@@ -54,7 +54,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 |------|------|
 | `prometheus.md` | 在上游计划契约内补充需求溯源、owner/failure-family 原子化证据、三类执行拓扑、计划分级（轻量/完整）、路由字段、验收 checkpoint 与 workspace lane 契约；计划审查由用户手动触发（不审 / 单审 Momus / 双审 Oracle→Momus） |
 | `atlas.md` | 在上游逐 delegation 验证与 checkbox 更新之上，补充 execution-only 边界、节点统一召回验收（wave 末/检查点/依赖门/终态排水）、契约三级裁决、账本与 CAS、工作区与集成裁决 |
-| `sisyphus.md` | 强化小团队 Leader 的单批蜂群并发（依赖就绪集单批 fan-out、后台派发、批末统一验收）、经济路由与上下文控制 |
+| `sisyphus.md` | 强化小团队 Leader 的蜂群滑动并发（依赖就绪集单批爆发 + 滑动补位、运行中+未验收 ≤6、排水点统一验收）、经济路由与上下文控制 |
 | `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
 | `momus.md` | 在官方 Reference Validation、Executability、Critical Blockers、QA Scenario Executability 四类审查内，使用原子化、拓扑、工作区和上下文胶囊作为证据判据；不新增 blocker 类别或本地复审上限 |
 | `oracle.md` | 按需提供阶段适配的架构与研究方案，抑制细枝末节和投机性安全冗余 |
