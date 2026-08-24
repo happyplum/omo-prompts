@@ -192,6 +192,7 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
 - 状态：`active`
 - 决策：本仓 prompt（prometheus / sisyphus / README）移除「蜂群」术语——上级已把并行约束为「按独立性拆解 + 低档 worker 并发」，本地术语不承载额外行为，只剩最大化代理数的误导暗示；cohort 归属与 `concurrency_budget` 预算体制不变，执行侧立场由 skills 仓承载。
 - 验收：本仓全文无「蜂群」残留（本条历史记载除外）；未新增数值上限、门禁或 reviewer 要求。
+- 修订（2026-08-24，D-028）：「蜂群」术语在 `sisyphus.md` 及其 README 索引描述的受控语境恢复使用——指「依赖就绪集单批 fan-out」，不承载最大化代理数暗示，其余场合维持无残留；Sisyphus 路径新增单批在飞上限 6，属有意新增并单独成决策（D-028），不违背本条「未新增数值上限」原意——该原意指术语移除不夹带新限制。
 
 ### D-025 路由明确性审查与测试链流水
 
@@ -224,6 +225,17 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
   - 「验收只写一遍」禁令：凡验收条目已含的命令与预期，禁止在其他位置复述；通用证据由计划级通用约定一次承载。
   - Momus 按分级核对新字段与矩阵列完整性，QA 场景核对落点迁至验收条目；矩阵为唯一拓扑事实源，Task 契约不含拓扑字段不构成缺失。
 - 验收：本仓无被删字段名残留（step_type / 验证命令 / QA happy 等，本文件历史记载除外）。
+
+### D-028 Sisyphus 路径受控蜂群（双路径分工）
+
+- 状态：`active`
+- 决策：
+  - 双路径分工：计划路径（Prometheus→Atlas）维持预算波次制（`concurrency_budget` 为计划路径唯一覆盖入口不变）；日常路径（Sisyphus）采用**单批蜂群 fan-out**——互不依赖、写域不重叠的 ready 产品任务按依赖就绪集在同一响应一次发完（多条 `task()`、全部 `run_in_background=true`），仅命名依赖（后继读取前驱产物、同文件写入）串行。
+  - 硬边界：写域互斥；命名依赖串行；共享同一推理/同接口/同不变量不拆、整体单发高档（D-012 / D-018 路由下限不变）；单批在飞上限 6（口径：单批在飞 worker 数，批末统一验收后清零），达到先统一验收再派下批；批末统一验收 = 完成通知到齐后逐个收 `background_output` 按契约 `[EVIDENCE]` 核对；公共接口、持久化、权限、并发、迁移、不可逆边界完成即验；蜂群批轻量锚点复用既有 todo 条款，不引入账本。
+  - 上游依据与档位取舍：start-work sizing 原文「a swarm of quick/unspecified-low workers in ONE parallel burst」与「共享推理不拆」；本机 glm 动态提示的并行派发段亦鼓励并发但建议 deep/high 档，本地取 start-work 的 quick/low 口径与经济路由（D-004）一致；ultrawork 关键字注入主会话的 `<parallel_by_default>` 为补充证据。
+  - overlay 覆盖边界：`sisyphus.md` 覆盖的仅是并发节奏与数值上限；Category 路由、升档协议、发现委托、质量门仍以 `omo-adaptive-execution` 为权威；该 skill 的例外条款限定「仅 Sisyphus overlay」，计划路径不适用。
+  - 修订 D-024：见 D-024 修订注。
+- 验收：`sisyphus.md` 含单批蜂群条款与后台派发/收集流程；skill 例外条款点名 Sisyphus overlay 且「唯一覆盖入口」表述全部带「计划路径」限定；度量项：蜂群批次平均规模、批末一次验收通过率、蜂群后重派率、单批墙钟 vs 逐个派发对照；canary 对照按 D-011 待首个真实蜂群任务补。
 
 ## 已废弃决策
 

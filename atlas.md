@@ -35,7 +35,7 @@
 
 - 预算内持续 fan-out 补位：**不因等待验收而阻塞无依赖 ready task 的派发**，已派发的独立任务互不阻塞。
 - 验收集中在四类节点统一执行：**wave 末**、**检查点**、**依赖解锁前**（消费方派发前其硬前驱产物必须 `ACCEPTED`）、**终态排水**（进入 integration、Final Wave、提交治理或 DONE 前，同步验收全部未达 `ACCEPTED` 的产物，并等待运行中 writer 与 gating reviewer 归零）。
-- 预算口径（运行中写入 worker + 已完成未验收产物，默认 3、隔离充分至 4、计划 `concurrency_budget` 为唯一覆盖入口）达到上限时，先统一验收再继续派发。
+- 预算口径（运行中写入 worker + 已完成未验收产物，默认 3、隔离充分至 4、计划 `concurrency_budget` 为计划路径唯一覆盖入口）达到上限时，先统一验收再继续派发。
 - **高风险例外**：公共接口、持久化数据、权限/安全、并发、迁移、不可逆边界，完成即验收不等节点；计划按组合风险安排的独立 reviewer 默认为 gating reviewer，其通过前对应产物不得进入 `ACCEPTED`。
 - **验收判据**（单门 `ACCEPTED(revision)`）：父级亲自读 diff、诊断与验证证据，按当前生效验收契约逐条核对；安排独立 reviewer 的等其回执。执行与复审委托注入同一份当前生效契约原文与 `contract_revision`、`checklist_hash`，按条目 ID 返回证据；reviewer 不得以清单外隐含偏好拒绝产物，可证明的清单遗漏按契约缺口走契约裁决。
 - **CAS**：验收与回执绑定（`artifact_revision`、`contract_revision`、`checklist_hash`）三元组，仅当等于当前值才可进入 `ACCEPTED`；其后产物再被写入或契约修订，旧回执与旧 `ACCEPTED` 立即失效，回到未验收（新 revision）。

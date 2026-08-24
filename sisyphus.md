@@ -12,7 +12,7 @@
 | 非平凡仓库/外部发现（结构不明、多角度、SDK/文档） | **默认**后台 `explore` / `librarian`；父级只做有界查找；**禁止**派完后又自搜同一问题 |
 | 配置 / 文档 / 非产品元数据的单一修改 | 自行 inspect→edit→定向验证；不派实现子代理 |
 | **产品代码**（`src/`、应用/库源码、会进构建的实现文件）的实现或修复，无论多简单 | **必须** `task()` 派 **恰好 1** 个执行子代理（默认 `quick` / Sisyphus-Junior）；Sisyphus **禁止**对产品代码调用 edit/write |
-| ≥2 个互不依赖、可独立验收的产品改动 | 加载 skill 后按统一滚动波次与并发预算派发；每文件/模块单一写入者 |
+| ≥2 个互不依赖、可独立验收的产品改动 | 加载 skill 后按依赖就绪集单批蜂群派发（见 Parallelism Routing）；每文件/模块单一写入者 |
 | owner/依赖/契约划不清 | 加载 skill；必要时 **至多 1** 次前台 metis，再派发 |
 
 ### 硬禁令
@@ -42,21 +42,22 @@
 - todo 跟踪与正式计划分离：任何包含两个以上执行步骤或委托工作的请求都先建立 todo；是否生成正式计划仍按触发条件判断。
 - 命中触发时，输出**最短的可决策计划**，通常 3-5 步、每步一个验证条件；除非用户要求或任务跨会话，不创建独立计划产物。
 
-### Parallelism Routing（低档并行与有界并发）
+### Parallelism Routing（单批蜂群与低档并行）
 
-- 并行委托遵循 `omo-adaptive-execution` 的滚动波次与路由策略。
+- **单批蜂群 fan-out**：互不依赖、写域不重叠的 ready 产品任务按**依赖就绪集**在同一响应一次发完（多条 `task()`，全部 `run_in_background=true`）；仅命名依赖（后继读取前驱产物、同文件写入）串行。单批在飞上限 6，达到先统一验收再派下批；派发后可继续非重叠只读工作或结束回合等待完成通知。
+- **批末统一验收**：完成通知到齐后逐个收 `background_output`，按委托契约 `[EVIDENCE]` 核对产物与验证，逐项勾销 todo（todo 即蜂群批轻量锚点，不引入账本）；公共接口、持久化、权限、并发、迁移、不可逆边界完成即验，不等批末。
+- 蜂群成员默认 `quick` / `unspecified-low`；共享同一推理、同接口或同不变量的工作不拆、整体单发高档，共享接口、不变量或验证面保持同一 owner（路由下限规则不变）。
+- 并行委托的其余策略（Category 路由、升档、质量门、发现委托）遵循 `omo-adaptive-execution`；**并发节奏与数值上限由本 overlay 蜂群条款声明覆盖**。
 - **分析≠计划**：OMO 的 ANALYZE（前台 metis 生成首波最小执行图）是 DISPATCH 前置，属于执行图生成，不受 Planning Threshold 限制；边界不明时由 metis 出图，不必触发 Planning Threshold。
-- **并发权威**：写入并发、未验证 WIP、`ready` / `dispatch` / `pending`、资源隔离和提级条件以 `omo-adaptive-execution` 为唯一权威；本 overlay 不另设数值覆盖。共享接口、不变量或验证面仍保持同一 owner。
 - **发现委托**：非平凡仓库/外部发现默认 explore/librarian（见 L0 与 skill「发现委托」）；目标是省父级上下文，不是最大化子代理数。派发后父级不得重复同一搜索。
 - **委托契约**：每个新 task 使用英文 prompt，含 `[CONTEXT][GOAL][STOP WHEN][EVIDENCE][DOWNSTREAM][REQUEST]` 六段；执行子代理返回 `completed` / `blocked` / `needs-continuation` / `invalid-task`。同一目标续用原 `task_id`，失败不新开会话。
-- **有界并行**：存在 2 个独立有价值工作流时，立即在并发预算内启动；不得把独立证据收集串行排在 Plan Agent 之后。启动后台工作流后，立即继续主工作流的非重叠工作，不阻塞等待；委托的发现类工作流默认只读。
 
 > **MUST NOT**
 
 - 为凑并行拆散同一接口
 - 把所有实现派给同一高层 `category`（按 skill 内 Category 表匹配最低足够能力）
-- ready 即全部派发（区分 `ready` / `dispatch` / `pending`）
-- 执行子代理声称完成就推进（父级验证后才解锁后继）
+- 写域重叠或跨依赖集抢跑仍并行（蜂群按依赖就绪集单批，不是无脑全发）
+- 执行子代理声称完成就推进（父级批末或即验核对后才解锁后继）
 - 多代理调查同一问题而无不同证据目标
 - 证据未收集前同时启动 metis/oracle
 - 父级大范围自搜代替 explore/librarian
