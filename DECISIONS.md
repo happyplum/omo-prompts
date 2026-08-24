@@ -125,25 +125,26 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
 ### D-015 高精度审查线性串行
 
 - 状态：`active`
-- 决策：高精度审查按 Oracle → Momus 线性串行送审（用户裁决顺序），不并行派发双审；Oracle 返回 `OKAY` 前不送 Momus——架构与方向层裁决先闭合，再做结构可执行性审。任一 reviewer 触发修订即产生新版本、既有 verdict 失效，回到 Oracle 重审；最终通过 = 两份 `OKAY` 绑定同一计划版本。仅约束本地双审门的送审顺序，不改变上游各 reviewer 的职责与复审轮次（S-003 边界不变）。
-- 验收：送审记录中 Momus 委托不早于 Oracle `OKAY`；修订后不存在沿用旧版本 verdict 的通过。
-- 修订（2026-08-22，D-026）：双审不再默认执行——计划审查由用户手动触发，选择不审 / 单审 Momus / 双审 Oracle→Momus；选中双审时本条串行规则仍适用。
+- 决策：高精度审查按 Oracle → Momus 顺序送审（用户裁决顺序），不并行派发双审；**两阶段各自循环**——Oracle 阶段（`[REJECT]` → 修订 → Oracle 重审）循环至 `OKAY`，Momus 阶段（`[REJECT]` → 修订 → Momus 重审）循环至 `OKAY`；Momus 阶段的修订在 Momus 循环内消化，不回送 Oracle。仅约束本地双审门的送审顺序，不改变上游各 reviewer 的职责与复审轮次（S-003 边界不变）。
+- 验收：送审记录中 Momus 委托不早于 Oracle `OKAY`；Momus 阶段修订无回送 Oracle 的记录。
+- 修订（2026-08-22，D-026）：双审不再默认执行——计划审查由用户手动触发；选中双审时本条串行规则仍适用。
+- 修订（2026-08-25，用户裁决）：废除「任一 reviewer 触发修订回到 Oracle 重审」与「两份 `OKAY` 绑定同一计划版本」的跨阶段绑定——双审明确为先 Oracle 循环通过、再 Momus 循环，各阶段内消化修订；循环与注入协议由 `omo-plan-review` skill 单一承载。
 
 ### D-016 计划审查分工与收敛三段式
 
 - 状态：`active`
-- 决策：计划审查双 reviewer 分工收敛（mitm 计划 5 轮 Oracle 循环 $12/41min 教训：无收敛条件+每轮全新会话重扫+显微架构同权重）——Oracle 只阻断架构层大雷（执行期无法自救且测试无法拦截级），显微级发现以 `handoff-to-momus` 非阻断建议移交；Momus 承接机械维度穷举（类型/单位/字段映射/调用方/文件归属/命令可执行性/契约-AC 一致性，完整审查委托逐维标注不允许遗漏）。每个 reviewer 环节内部三段式收敛：初审（干净上下文新会话）→ 修订后温链复审（续用原会话，只核闭合与 diff 新矛盾；不可续用时注入审查胶囊）→ 干净终审（新会话一次性复查，无雷即闭合）。温链复审默认 1 轮、最多 2 轮，超限停止循环升级用户裁决；reviewer 间仍线性 Oracle→Momus（D-015），跨 reviewer 回退合计计入温链上限。落点分工见 README「维护规范」。
+- 决策：计划审查双 reviewer 分工收敛（mitm 计划 5 轮 Oracle 循环 $12/41min 教训：无收敛条件+每轮全新会话重扫+显微架构同权重）——Oracle 只阻断架构层大雷（执行期无法自救且测试无法拦截级），显微级发现以 `handoff-to-momus` 非阻断建议移交；Momus 承接机械维度穷举（类型/单位/字段映射/调用方/文件归属/命令可执行性/契约-AC 一致性，完整审查委托逐维标注不允许遗漏）。每个 reviewer 环节内部三段式收敛：初审（干净上下文新会话）→ 修订后温链复审（续用原会话，只核闭合与 diff 新矛盾；不可续用时注入审查胶囊）→ 干净终审（新会话一次性复查，无雷即闭合）。温链复审默认 1 轮、最多 2 轮，超限停止循环升级用户裁决；reviewer 间线性 Oracle→Momus（D-015 两阶段循环）。落点分工见 README「维护规范」。
 - 验收：送审记录无超上限审查循环；温链轮复审不重读全文（input 显著低于初审）；Oracle 显微发现以 handoff 建议出现在 Momus 核对清单。
 - 修订（2026-08-22，D-026）：三段式收敛压缩为初核全量 + 温链 diff 复审 + 闭合（干净终审并入闭合条件）；reviewer 分工与 handoff 机制保留。
+- 修订（2026-08-25，D-030）：「跨 reviewer 回退合计计入温链上限」随双审两阶段循环化废除——Momus 阶段修订不回送 Oracle；温链与收敛规则、reviewer 委托注入模板迁入 `omo-plan-review` skill 单一承载。
 
-### D-017 测试任务组织与路由
+### D-017 测试时序判定（verdict 附件化）
 
 - 状态：`active`
-- 决策：测试时序由 Momus 在计划审查时裁决，Prometheus 不自行判定，只把裁决落进计划正文（测试组织写在 Task 契约里）。判据——测试是「定义行为」还是「确认行为」。四问：①不读实现能否写测试 ②失败是否静默 ③是否语义变更/修复 ④是否仅模式复制。命中前三任一 → test-first；仅模式复制 → tests-after；其余默认 tests-after。
-  - 挂载通道：test-first 裁决以官方 QA Scenario Executability 类表达——命中的 task 计划中无前置红测试 task 时，其 QA 场景无法满足上游 failing-first proof，报 blocker 并要求拆出；tests-after 裁决为非阻断建议。
-  - 三段组织：前置红测试 task（验收=测试红 + 逐条契约 ID 对号 + 语义抽查）；实现 task（完成标准=前置红测试全绿）；后置补测试 task（按需可选，不作为实现验收前置）。
-- 边界：前置红测试是契约行为的可执行规格，实现 task 不重写等价测试，只补实现过程中新暴露的必要断言；语义抽查=核对断言与契约条目语义一致，不过则走契约修订或测试修复（append-only）；测试 task 路由不得高于 `unspecified-low`，与实现 task 分离派发（禁止同一 worker 兼任）；tests-after 不削弱 failing-first proof（走 Manual-QA 通道）。与上游 ulw-plan「Implementation + Test = ONE todo」的差异仅在于 test-first 命中时前置红测试 task，实现 task 仍含直接测试；上游更新后重新核对。
-- 验收：test-first 任务测试先行、实现随后；tests-after 任务附判据依据。
+- 决策：测试时序由 Momus 审查时判定，Prometheus 不做测试任务组织。四问判据不变：①不读实现能否写测试 ②失败是否静默 ③是否语义变更/修复 ④是否仅模式复制；命中前三任一 → `tdd=first`，其余 → `tdd=after`。判定以 verdict 附件输出（`omo-plan-structure` 格式），**不再要求计划拆前置红测试 task、不作为 blocker**；`tdd=first` 由 Atlas 派发时在同一委托内注入「先证红再转绿」（不拆委托），`[EVIDENCE]` 含红绿两段。
+- 边界：测试组织回归上游契约（agent-executed QA per todo 与 failing-first proof）；实现、直接测试与必要调用方同属一个 task/todo（上游 ONE todo 模型）；QA 场景核对仍按官方 QA Scenario Executability 执行（验收条目缺命令/预期仍可阻断）。
+- 验收：verdict 附件含逐 task `tdd` 判定；`tdd=first` 派发委托含红绿两段证据要求；计划正文无测试专用 task 前缀。
+- 修订（2026-08-25，D-030）：落点由「计划拆前置红测试 task + 分离派发（旧条款废除）」改为 verdict 附件直通执行期——时序判定保留（本地增强），任务组织回归上游 ONE todo 模型（Prometheus 减负，用户裁决）。
 
 ### D-018 风险特征路由下限
 
@@ -181,11 +182,12 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
 - 决策：Prometheus 开始规划工作前、Momus 开始审查任何计划版本前必须先加载 `omo-plan-structure`；两个 prompt 不复制结构 schema（字段枚举、结构约束示例、原子性定义），结构类不一致以 skill 裁决；生成方法与审查裁决规则留在各自 prompt。
 - 验收：两 prompt 均含会话启动门且无结构 schema 复制残留，prompt 不出现字段名漂移（如 `内聚结果` / `行为验收` 旧名）。
 
-### D-023 Momus 拆解与并发增强分析
+### D-023 Momus 拆解与并发判定（split 附件化）
 
 - 状态：`active`
-- 决策：Momus 在结构核对外附加建设性分析：逐 task 反事实拆解（能否进一步拆出独立可发布/验收/回退的结果）与并发识别（被无证据串行化的 task、cohort 归属与 wave 重组建议），判据对照 `omo-plan-structure` 的原子性契约与并行准入标准。产出为非阻断建议、不新设 blocker 类别，与 blocker 同粒度输出，随初审执行，复审仅对 diff 引入的新捆绑/串行化增量补做。
-- 验收：Momus 建议可被计划方直接落位（拆分边界+验收 / cohort / wave 重组），无建议被升级为 blocker 的记录（除非独立命中官方四类判据）。
+- 决策：Momus 在结构核对外附加执行判定 `split`：逐 task 反事实拆分（能否进一步拆出独立可发布/验收/回退的结果）与并发重组识别（被无证据串行化的 task、cohort 归属与 wave 重组），判据对照 `omo-plan-structure` 的原子性契约与并行准入标准；产出以 verdict 附件输出（`split=no | yes:拆分边界与各自验收`），不再走「建议计划方修订」通道——Atlas 按判定经标准 REMAP 通道直接生效（含机械结构校验），不触发计划回炉修订循环。判定随初审执行，温链复审仅对 diff 新引入的 task 补做。
+- 验收：`split=yes` 判定可被 Atlas 直接 REMAP 落位（拆分边界+各自验收 / cohort / wave 重组）；无判定被升级为 blocker 的记录（除非独立命中官方四类判据）。
+- 修订（2026-08-25，D-030）：产出通道由「非阻断建议→Prometheus 修订」改为 verdict 附件直通执行期 REMAP（用户裁决）。
 
 ### D-024 移除蜂群概念，收敛为最小化拆解与低档并行
 
@@ -194,15 +196,15 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
 - 验收：本仓全文无「蜂群」残留（本条历史记载除外）；未新增数值上限、门禁或 reviewer 要求。
 - 修订（2026-08-24，D-028）：「蜂群」术语在 `sisyphus.md` 及其 README 索引描述的受控语境恢复使用——指「依赖就绪集派发 + 滑动补位的蜂群并发」，不承载最大化代理数暗示，其余场合维持无残留；Sisyphus 路径新增滑动窗口上限（运行中 + 未验收 ≤ 6），属有意新增并单独成决策（D-028），不违背本条「未新增数值上限」原意——该原意指术语移除不夹带新限制。
 
-### D-025 路由明确性审查与测试链流水
+### D-025 路由明确性与合适性审查
 
 - 状态：`active`
 - 决策：
-  - 路由明确性审查：Momus 初审穷举维度新增矩阵 route 三选一核对、`load_skills` 匹配与高价路由举证核对。
-  - 测试链流水：Prometheus 的 wave 组织从类型批次（同类归同 wave、wave 间串行）改为依赖就绪分组，`test-freeze` 可与写域互斥的 `impl` 同 wave 并行，测试链按 task 流水；最小波数约束防碎片化。
-  - 研究佐证：TDD 四问判据与 Fucci et al.（ICSE 2017）及 Nagappan et al.（2008）结论吻合，momus 判据不改；编排 pipeline 模式支持流水裁决。
-- 验收：本仓无「同类 task 归同 wave」残留；Momus 穷举维度含路由标注明确性。
-  canary 对照按 D-011 待首个真实计划执行时补。
+  - 路由明确性审查：Momus 初审穷举维度含矩阵 route 三选一核对、`load_skills` 匹配与高价路由举证核对。
+  - 路由合适性判定：Momus 对照 `omo-plan-structure`「路由档位判据」输出 `route=` 判定附件——标注明显失当时写判定值，Atlas preflight 采纳（覆盖计划标注）；执行期失败证据（升档协议）仍可覆盖判定；判定不阻塞派发。
+  - wave 组织：从类型批次（同类归同 wave、wave 间串行）改为依赖就绪分组；最小波数约束防碎片化。
+- 修订（2026-08-25，D-030）：「测试链流水」与「TDD 四问研究佐证」条目删除（测试组织随 D-017 改造回归上游）；新增 route 合适性判定（verdict 附件）。
+- 验收：本仓无「同类 task 归同 wave」残留；Momus 穷举维度含路由标注明确性；送审计划 verdict 附件含逐 task `route` 判定。
 
 ### D-026 治理栈减负（节点统一召回与判据化）
 
@@ -212,6 +214,7 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
   - 状态机与复审简化（atlas）：COLLECTED→VERIFYING→ACCEPTED 三态收敛为 `ACCEPTED(revision)` 单门；删除 INITIAL/DELTA/CARRIED/NOT_EVALUATED/review packet 体系，复审统一温链 diff-only；CAS 三元组保留。
   - 账本精简（atlas）：task 条目 15→7 字段，`plan_revision` 事件 ~20→7 字段；摘要一致 fail-closed 保留。
   - 计划审查用户触发（prometheus）：计划完成后询问用户选择不审 / 单审 Momus / 双审 Oracle→Momus，命中高风险特征建议双审。
+  - 修订（2026-08-25，D-030）：三选项定为「1 直接执行（不审）/ 2 Momus 单审 / 3 Oracle 循环→Momus 循环」，去掉「命中高风险建议双审」——只提供选项不加建议（用户裁决）。
   - AGENTS.md 减半重构：195→约 75 行，六套规则并为四节，流程性条款改判据性条款。
   - 计划正文减重（prometheus）：删逐 wave 差异式举证（矩阵 + 一行声明），章节压缩约三分之一。
   - 参照：Codex/Claude 编排模式（controller 侧验证、并行 fan-out + 统一收集）；「compaction 丢验收目标→无限循环」证明 acceptance_contract 持久化必须保留；「orchestrator 频繁打断子代理」证明逐 task 验收节奏应废弃。
@@ -244,6 +247,19 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
 - 决策：Atlas 会话收到无计划依托的新需求时，不加载规划类 skill、不自任 Prometheus——规划类 skill 正文含整体角色覆盖与 plan mode sticky 条款，加载即角色劫持；处置：小需求（`quick` / `unspecified-low` 可闭合）征得用户同意后按轻量路径执行或委托，大需求或多阶段高风险目标停止并建议用户在 Prometheus 会话规划后再回执行。
 - 触发证据：真实会话中 Atlas 收到开发需求后自行加载 ulw-plan，被其「You are Prometheus」+「Plan mode is sticky」条款完全劫持角色；根因是 skill description 的泛化触发词（make a plan / start planning 等）与「用户自然语言要计划」的主观激活判定，叠加 Atlas prompt 与上游 base prompt 均无「无计划新需求」处置条款的行为缺口。
 - 验收：`atlas.md` 角色边界含无计划新需求处置条款；后续 Atlas 会话无加载规划类 skill 的记录。
+
+### D-030 审查协议 skill 化与三判定直通执行期
+
+- 状态：`active`
+- 决策：
+  - 职责重分配（用户裁决）：Prometheus 专注收集资料与编写计划（不做测试任务组织、不做路由精调——只初标，档位判据以 `omo-plan-structure`「路由档位判据」为准）；Momus 承担三类执行判定；Oracle 纯本职（双审大雷判据随委托注入，不写 Oracle prompt——「派发方持有协议」原则）。
+  - 审查协议 skill 化：新建 skills 仓 `omo-plan-review`，单一承载审查模式（单审/双审两阶段循环）、reviewer 委托注入模板、温链收敛与成本门槛；`prometheus.md` 审查节缩减为三选项 + 加载指令。
+  - 触发模型：默认不送审；计划完成后只提供三选项——1 直接执行（不审）/ 2 Momus 单审 / 3 Oracle 循环→Momus 循环；不加高风险建议。
+  - 三判定 verdict 附件（`omo-plan-structure` 格式）：`tdd`（D-017 四问）/ `split`（D-023 拆解与并发重组）/ `route`（D-025 合适性）逐 task 一行，附于官方 verdict 之后，不改变 verdict 格式与阻断语义。
+  - 判定直通执行期（不回炉计划）：`tdd=first` → Atlas 同一委托内注入先红后绿；`split=yes` → Atlas 标准 REMAP 通道（含机械结构校验）；`route=` → Atlas preflight 采纳，执行期失败证据仍可覆盖。判定差异不触发计划修订循环。
+  - 判定持久化与版本绑定：Atlas 首次消费前以 `review_verdict` 事件摘录入执行账本（抗会话压缩）；判定绑定审查时计划版本，结构性变化触及的 task 判定失效、回到自行 preflight；未送审计划无判定、全部自行 preflight。
+  - 判定增量原则：随初审执行，温链复审仅对 diff 新引入的 task 补判定。
+- 验收：`omo-plan-review` 含两阶段循环与注入模板；`momus.md` 含执行判定节；`atlas.md` 含判定消费映射与 `review_verdict` 入账；两仓无 `[test-freeze]`/`[test-supplement]`/「测试时序裁决（blocker 通道）」残留（本文件历史记载除外）；canary 对照按 D-011 待首次送审计划执行时补（度量：判定覆盖完整率、tdd=first 委托红绿证据率、split 判定 REMAP 采用率、审查-执行墙钟比）。
 
 ## 已废弃决策
 

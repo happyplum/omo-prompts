@@ -52,11 +52,11 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 
 | 文件 | 作用 |
 |------|------|
-| `prometheus.md` | 在上游计划契约内补充需求溯源、owner/failure-family 原子化证据、三类执行拓扑、计划分级（轻量/完整）、路由字段、验收 checkpoint 与 workspace lane 契约；计划审查由用户手动触发（不审 / 单审 Momus / 双审 Oracle→Momus） |
-| `atlas.md` | 在上游逐 delegation 验证与 checkbox 更新之上，补充 execution-only 边界（含无计划新需求处置与角色劫持防护）、节点统一召回验收（wave 末/检查点/依赖门/终态排水）、契约三级裁决、账本与 CAS、工作区与集成裁决 |
+| `prometheus.md` | 在上游计划契约内补充需求溯源、owner/failure-family 原子化证据、三类执行拓扑、计划分级（轻量/完整）、路由初标、验收 checkpoint 与 workspace lane 契约；计划审查默认不送审，完成后只提供三选项（直接执行 / Momus 单审 / Oracle 循环→Momus 循环） |
+| `atlas.md` | 在上游逐 delegation 验证与 checkbox 更新之上，补充 execution-only 边界（含无计划新需求处置与角色劫持防护）、节点统一召回验收（wave 末/检查点/依赖门/终态排水）、审查判定消费（tdd 注入 / split REMAP / route preflight 采纳 + review_verdict 入账）、契约三级裁决、账本与 CAS、工作区与集成裁决 |
 | `sisyphus.md` | 强化小团队 Leader 的蜂群滑动并发（依赖就绪集单批爆发 + 滑动补位、运行中+未验收 ≤6、排水点统一验收）、经济路由与上下文控制 |
 | `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
-| `momus.md` | 在官方 Reference Validation、Executability、Critical Blockers、QA Scenario Executability 四类审查内，使用原子化、拓扑、工作区和上下文胶囊作为证据判据；不新增 blocker 类别或本地复审上限 |
+| `momus.md` | 在官方 Reference Validation、Executability、Critical Blockers、QA Scenario Executability 四类审查内，使用原子化、拓扑、工作区和上下文胶囊作为证据判据；附 tdd / split / route 三类执行判定（verdict 附件，直通执行期）；不新增 blocker 类别或本地复审上限 |
 | `oracle.md` | 按需提供阶段适配的架构与研究方案，抑制细枝末节和投机性安全冗余 |
 | `metis.md` | 规划前以有界头脑风暴分析意图；执行期在冻结契约内生成最小执行图 |
 | `DECISIONS.md` | 记录用户长期需求、兼容原则、可观察验收和已废弃决策，防止 prompt 行为回退 |
