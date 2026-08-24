@@ -34,7 +34,7 @@
 
 ### 原子单位
 
-- 原子单位两级（步骤级 / 释放级）与「非原子」举证以 `omo-plan-structure` 为准；不同产品 owner、failure family 或可独立回退结果默认拆开；共享契约由单一 owner 先冻结，消费方在契约稳定后按 owner 并发；根门禁只作为 integration/checkpoint 验收，不能以中间 task 无法单独通过根门禁证明「非原子」。
+- 原子单位与「非原子」举证以 `omo-plan-structure` 为准；不同产品 owner、failure family 或可独立回退结果默认拆开；共享契约由单一 owner 先冻结，消费方在契约稳定后按 owner 并发；根门禁只作为 integration/checkpoint 验收，不能以中间 task 无法单独通过根门禁证明「非原子」。
 - **测试任务组织**（时序由 Momus 裁决，Prometheus 只落计划）：test-first 任务前置红测试 task（标题前缀 `[test-freeze]`：从基线契约派生，验收=测试红 + 逐条契约 ID 对号 + 语义抽查）与实现 task（完成标准=红测试全绿）分离，后置补测试 task（`[test-supplement]`）按需可选，集成 task 用 `[integration]` 前缀；测试 task 路由不得高于 `unspecified-low`；前置/后置测试与实现分离派发（禁止同一 worker 兼任）；tests-after 任务不削弱上游 failing-first proof 义务。
 - **验收只写一遍**：凡验收条目已含的命令与预期，禁止在其他位置复述；通用证据（如 typecheck 输出）由计划级通用约定一次承载，不在逐 task 重复。
 
