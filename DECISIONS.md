@@ -231,11 +231,19 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
 - 状态：`active`
 - 决策：
   - 双路径分工：计划路径（Prometheus→Atlas）维持预算波次制（`concurrency_budget` 为计划路径唯一覆盖入口不变）；日常路径（Sisyphus）采用**蜂群滑动并发**——互不依赖、写域不重叠的 ready 产品任务按依赖就绪集在同一响应一次发完（多条 `task()`、全部 `run_in_background=true`，单批爆发），仅命名依赖（后继读取前驱产物、同文件写入）串行；单个成员完成即释放额度、滑动补位下一 ready 任务，不等批边界。
+  - 路径入口由用户选择（2026-08-25 用户裁决）：Sisyphus 短计划更快、Prometheus 完整计划更保险，Sisyphus 的 Planning Threshold 命中（含高风险特征）不强制移交 Prometheus，走哪条路径由用户决定，不做自动分流。
   - 硬边界：写域互斥；命名依赖串行；共享同一推理/同接口/同不变量不拆、整体单发高档（D-012 / D-018 路由下限不变）；背压口径**运行中 + 未验收之和 ≤ 6**（滑动窗口，与计划路径预算口径同构）；验收集中在排水点（窗口满需释放额度、目标派发完毕、终态）——逐个收 `background_output` 按契约 `[EVIDENCE]` 核对；公共接口、持久化、权限、并发、迁移、不可逆边界完成即验；蜂群批轻量锚点复用既有 todo 条款，不引入账本。
   - 上游依据与档位取舍：start-work sizing 原文「a swarm of quick/unspecified-low workers in ONE parallel burst」与「共享推理不拆」；本机 glm 动态提示的并行派发段亦鼓励并发但建议 deep/high 档，本地取 start-work 的 quick/low 口径与经济路由（D-004）一致；ultrawork 关键字注入主会话的 `<parallel_by_default>` 为补充证据。
   - overlay 覆盖边界：`sisyphus.md` 覆盖的仅是并发节奏与数值上限；Category 路由、升档协议、发现委托、质量门仍以 `omo-adaptive-execution` 为权威；该 skill 的例外条款限定「仅 Sisyphus overlay」，计划路径不适用。
   - 修订 D-024：见 D-024 修订注。
 - 验收：`sisyphus.md` 含蜂群滑动并发条款（单批爆发 + 滑动补位 + 排水点验收）与后台派发/收集流程；skill 例外条款点名 Sisyphus overlay 且「唯一覆盖入口」表述全部带「计划路径」限定；度量项：蜂群批次平均规模、排水点一次验收通过率、蜂群后重派率、滑动窗口占用率（在飞+未验收 / 6）、单批墙钟 vs 逐个派发对照；canary 对照按 D-011 待首个真实蜂群任务补。
+
+### D-029 Atlas 无计划新需求处置与角色劫持防护
+
+- 状态：`active`
+- 决策：Atlas 会话收到无计划依托的新需求时，不加载规划类 skill、不自任 Prometheus——规划类 skill 正文含整体角色覆盖与 plan mode sticky 条款，加载即角色劫持；处置：小需求（`quick` / `unspecified-low` 可闭合）征得用户同意后按轻量路径执行或委托，大需求或多阶段高风险目标停止并建议用户在 Prometheus 会话规划后再回执行。
+- 触发证据：真实会话中 Atlas 收到开发需求后自行加载 ulw-plan，被其「You are Prometheus」+「Plan mode is sticky」条款完全劫持角色；根因是 skill description 的泛化触发词（make a plan / start planning 等）与「用户自然语言要计划」的主观激活判定，叠加 Atlas prompt 与上游 base prompt 均无「无计划新需求」处置条款的行为缺口。
+- 验收：`atlas.md` 角色边界含无计划新需求处置条款；后续 Atlas 会话无加载规划类 skill 的记录。
 
 ## 已废弃决策
 
