@@ -8,7 +8,7 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 
 - `prometheus.md` → 大型任务的探索与规划增强
 - `atlas.md` → 大型任务的可靠执行增强
-- `sisyphus.md` → 小团队 Leader 的蜂群滑动并发、经济路由与排水点验收增强
+- `sisyphus.md` → 小团队 Leader 的简单自改 + 蜂群滑动并发、统一回归验收与上下文防污染
 - `hephaestus.md` → 单目标自主深度编码增强
 - `momus.md` → 证据驱动、原子化与并行路线校验、可收敛复审的计划审核
 - `oracle.md` → 按需只读的架构与调试顾问
@@ -54,7 +54,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 |------|------|
 | `prometheus.md` | 在上游计划契约内补充需求溯源、owner/failure-family 原子化证据、三类执行拓扑、计划分级（轻量/完整）、路由初标、验收 checkpoint 与 workspace lane 契约；计划审查默认不送审，完成后只提供三选项（直接执行 / Momus 单审 / Oracle 循环→Momus 循环） |
 | `atlas.md` | 在上游逐 delegation 验证与 checkbox 更新之上，补充 execution-only 边界（含无计划新需求处置与角色劫持防护）、节点统一召回验收（wave 末/检查点/依赖门/终态排水）、审查判定消费（tdd 注入 / split REMAP / route preflight 采纳 + review_verdict 入账）、契约三级裁决、账本与 CAS、工作区与集成裁决 |
-| `sisyphus.md` | 强化小团队 Leader 的蜂群滑动并发（依赖就绪集单批爆发 + 滑动补位、运行中+未验收 ≤6、排水点统一验收）、经济路由与上下文控制 |
+| `sisyphus.md` | 强化小团队 Leader 的轻量混合执行：简单自改（定向操作不污染上下文）、蜂群滑动并发（依赖就绪集单批爆发 + 滑动补位、运行中+未验收 ≤6）、统一回归验收（少量自修 / 量大派修）与经济路由 |
 | `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
 | `momus.md` | 在官方 Reference Validation、Executability、Critical Blockers、QA Scenario Executability 四类审查内，使用原子化、拓扑、工作区和上下文胶囊作为证据判据；附 tdd / split / route 三类执行判定（verdict 附件，直通执行期）；不新增 blocker 类别或本地复审上限 |
 | `oracle.md` | 按需提供阶段适配的架构与研究方案，抑制细枝末节和投机性安全冗余 |
