@@ -72,7 +72,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 - 每份 Markdown 只有一个描述文件用途的 H1，其余章节保持递增层级（markdownlint MD025 / MD041 clean）。
 - 角色 prompt 只保留必要的准则、参考、约束与防漂移规则；禁止写入元声明、免责声明、兼容性声明及「本节只补充」「上游规则继续有效」等无行为约束力的表述。
 - **行为 prompt 自包含**：角色文件正文不引用 `DECISIONS.md` 编号或仓库内部记账；规则的约束力来自条文本身，消费 prompt 的模型不知道也不需要知道决策编号。溯源记录只存在于 `DECISIONS.md`。
-- **派发方持有协议，角色 prompt 只承载判定标准**：跨角色协作协议（审查模式标注、轮次编排、会话续用策略、胶囊构造、阻断标准注入、移交规则、输出格式契约）只写在派发方的编排文件（计划审查→`prometheus.md`，执行验收→`atlas.md`，日常委托→`sisyphus.md`），派发时写进 `task()` 委托 prompt；响应方角色 prompt 不含模式协议、轮次词汇、调度逻辑或对其他文件的元声明，只保留自身判定标准与对委托所附内容的消费。同一规则禁止双份维护，发现重复时保留派发方、从响应方删除。自查口诀：这条行为是「我自己怎么判断」还是「别人怎么调度我」——后者移到派发方。
+- **派发方持有协议，角色 prompt 只承载判定标准**：跨角色协作协议（审查模式标注、轮次编排、会话续用策略、胶囊构造、阻断标准注入、移交规则、输出格式契约）只写在派发方的编排文件（计划审查→`omo-plan-review` skill，执行验收→`atlas.md`，日常委托→`sisyphus.md`），派发时写进 `task()` 委托 prompt；响应方角色 prompt 不含模式协议、轮次词汇、调度逻辑或对其他文件的元声明，只保留自身判定标准与对委托所附内容的消费。同一规则禁止双份维护，发现重复时保留派发方、从响应方删除。自查口诀：这条行为是「我自己怎么判断」还是「别人怎么调度我」——后者移到派发方。
 
 ### 提交与生效
 
@@ -100,20 +100,33 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 
 当前 `~/.omo/omo.jsonc` 启用 `auto_update`。上游更新后需重新核对 Prometheus/Atlas/Momus 基础 prompt、`ulw-plan`、category 路由和 `/stop-continuation`；兼容基线未更新前，不假定本地 append 仍与新契约一致。
 
+### 已裁决相抵点（D-033）
+
+上游不可改，以下与上游的相抵点均经决策裁决；上游版本核对时以本清单为豁免依据，不得当作待删冲突：
+
+- **计划工件体制**：不经上游 `ulw-plan` scaffold、计划存 `docs/plans/`（`omo-plan-structure` 豁免条款）；上游规划期 draft 恢复点无本地对应物，为已知缺口。
+- **审查触发**：上游 UNCLEAR 自动送审与 high-accuracy 强制审，被本地用户触发三选项替代（D-026/D-030）。
+- **Atlas 并发与验收**：`run_in_background` 默认 true 对上游 NEVER（D-005/D-008）；验收节点化替换上游逐 task 勾选门（D-008/D-026）；防劫持条款阻断上游 start-work No-plan bootstrap（D-029）。
+- **基线预验**：派 quick 档执行子代理超出上游 ulw-plan 只读委托白名单（D-009）。
+- **未裁决缝隙**：上游 Momus 输入契约只认 `.omo/plans/*.md` 路径模式，与本地 `docs/plans/` 存储冲突，待用户裁决。
+
 ### 上游提示词探查顺序
 
 探查上游角色基础 prompt 时，**先匹配当前模型绑定对应的专属变体**，不要只看 default 版：
 
 1. 先读 `~/.omo/omo.jsonc` 确定各 agent 当前绑定的模型；
 2. 在 `~/.cache/opencode/packages/oh-my-openagent@beta/node_modules/oh-my-openagent/dist/agents/` 下按模型找专属变体（文件名含模型后缀，或 `createXAgent(model)` / `getXPrompt(model)` 按模型分流）；default 版只用于核对兼容性，不作为运行时行为基线；
-3. 明文内嵌的变体（d.ts 中 `= "..."`）可直接提取；仅声明（`declare const ...: string`）或完全无 const 声明的变体在平台二进制内，本地无法提取，改以 `ulw-plan` / `start-work` skill 与 hook 契约为镜像核对。
+3. 明文内嵌的变体（d.ts 中 `= "..."`）可直接读取；其余角色的正文以字符串字面量内嵌于 `dist/index.js` 捆绑包，可按标记（如 `You are Atlas`）取字节偏移后提取解码；完全无文本形态的才改以 `ulw-plan` / `start-work` skill 与 hook 契约为镜像核对。
 
-已探明边界（2026-08-21）：
+已探明边界（2026-08-25，bundle 提取法更新）：
 
 | 角色 | 当前绑定 | 明文提取 | 镜像核对 |
 |---|---|---|---|
-| momus | openai/gpt-5.6-sol | ✅ `momus-gpt-5-6.d.ts` | — |
-| momus 备用 | Claude/其他 | ✅ `momus.d.ts`（default） | — |
-| prometheus / atlas / metis / oracle / sisyphus | — | ❌ 二进制内 | `ulw-plan`、`start-work` skill + hooks |
+| momus | openai/gpt-5.6-sol | ✅ `momus-gpt-5-6.d.ts`（default 备用 `momus.d.ts`） | — |
+| prometheus | zhipuai-coding-plan/glm-5.3 | ✅ bundle 提取：consultant / planner（Ultrawork 注入）两变体 | `ulw-plan` |
+| atlas | openai/gpt-5.6-terra | ✅ bundle 提取：default / gemini / glm 三变体（terra 专属未提取，以 default 为基线参照） | `start-work` |
+| oracle | openai/gpt-5.6-sol | ✅ bundle 提取：单一正文（文中写 based on GPT-5.5，gpt-5.6 专属变体是否存在待核） | — |
+| sisyphus | zhipuai-coding-plan/glm-5.3 | ✅ bundle 提取：glm-5-2 role 块 / default identity 块 / 动态完整版（glm-5.3 实际组装文本未确证） | `start-work` |
+| metis | zhipuai-coding-plan/glm-5.3 | ❌ 未探查 | — |
 
 模型绑定变化后，按新绑定重新探查明文变体，并在上表更新探明边界。

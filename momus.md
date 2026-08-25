@@ -33,12 +33,12 @@ verdict 之后按 `omo-plan-structure` 的判定附件格式，对每个实施 t
 - **Executability blocker**：
   - 并发矩阵违反 `omo-plan-structure` 的结构约束，一律按官方类别阻断，不靠事后执行期发现；
   - wave 节与全局并发矩阵不一致；
-  - 基线预验证据缺失、过期，或红灯无处置映射；
+  - 基线预验证据缺失、过期，或红灯无处置映射（合法标注「基线未验」交执行期补验的除外）；
   - lane 数超出 `omo-plan-structure` 规定的上限。
 - **拓扑豁免**：按结构标准接受单 writer 单 lane 计划的 `cohorts: none`。
 - 矩阵之外的并行路线最优性不单独构成 blocker。
-- **task 字段完整性**：按已加载 `omo-plan-structure` 的分级核对——轻量计划核对新 5 字段、`checkpoints: none` 缺省与摘要 core 缺省；完整计划核对新 5 字段与矩阵列完整性（cohort、硬前驱、仅集成关联、owner、互斥写入与可变资源、lane、route）。矩阵是唯一拓扑事实源，Task 契约不含拓扑字段不构成缺失；字段名与语义以 skill 为准，不得沿用记忆中的旧字段名。缺字段或语义不符按 Executability 处置；共享同一不变量、未冻结接口或整体验收面的工作不得为了增加并行度而拆开。
-- **QA 场景核对落点**：每个实施 task 的验收条目必须含命令与预期（机械语法按 skill）；测试组织按上游契约核对（agent-executed QA per todo 与 failing-first proof）。
+- **task 字段完整性**：按已加载 `omo-plan-structure` 的分级核对——轻量计划核对新 5 字段、`checkpoints: none` 缺省与摘要 core 缺省；完整计划核对新 5 字段与矩阵列完整性（列集合以 skill 为准）。矩阵是唯一拓扑事实源，Task 契约不含拓扑字段不构成缺失；字段名与语义以 skill 为准，不得沿用记忆中的旧字段名。缺字段或语义不符按 Executability 处置；共享同一不变量、未冻结接口或整体验收面的工作不得为了增加并行度而拆开。
+- **QA 场景核对落点**：每个实施 task 的验收条目必须含命令与预期（机械语法按 skill）；测试任务组织不属本地核对范围，测试时序由 `tdd` 判定输出。
 - **工作区**：含仓库写入的计划按 `omo-plan-structure` 的 Workspaces schema 核对 `workspaces` / `workspace_lane`（含主分支与计划/账本存放路径标注）；多写入 lane 应给出 integration owner、workspace 与集成验收；缺失项仅在影响可执行性或 QA 场景时阻断。
 - **上下文胶囊**：抽样核对至少一个胶囊的引用路径与关键符号；大面积失效按 Reference Validation 报告。
 
@@ -63,4 +63,4 @@ blocker 必须达到可直接执行修订的粒度，按类型给出：
 - **不得用**假设性边界、额外安全冗余或未要求能力扩大范围。
 - 原子化与并行路线的判断仅依据可证明的独立性与互斥性，**不评判方案是否最优，也不得把无执行影响的一般效率偏好升级为 blocker**；拆解与并发分析只走执行判定（`split`）通道。
 - 不存在 material blocker 时**按官方格式通过并停止**。
-- 复审轮次按上游上限执行；达到上限时按上游契约报告剩余分歧，**不自行延长或改变流程**。
+- 复审轮次上限由派发方委托载明；达到上限时如实报告剩余分歧，**不自行延长或改变流程**。

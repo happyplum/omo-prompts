@@ -90,6 +90,7 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
 - 状态：`active`
 - 决策：计划定稿前由规划侧派廉价执行子代理实跑终态验收命令做基线预验，证据（命令/退出码/失败摘要/disposition）单行记入「检查点与集成」，不设专用模板区块；规划侧无法派发时标注「基线未验」交 Atlas 首个 wave 前补验。并发矩阵存在性、形状与可消费性仍由 plan-linter 脚本 lint 子命令机械校验，linter 非零时 momus 以官方 [REJECT] 类别阻断。拓扑分层：单 writer 单 lane 的计划可写 `cohorts: none`；存在两个可同时 ready 的 write task、跨 lane、共享可变资源或高风险门禁时矩阵强制完整。
 - 验收：基线证据由子代理/Atlas 实跑输出产生，不由模型自报；wave 1 前 Atlas 无条件补验。（2026-08-20 修订：原「Baseline Gate 模板区块+工具四字段+命令同一性机械检查」轻量化为子代理预验，用户裁决避免通用模板负担。）
+- 修订（2026-08-25，D-033 统筹审计）：①「plan-linter 机械校验」条款已被 D-014 废止（机械门槛不进送审链），本条不再包含 lint 送审；②基线预验派 quick 档执行子代理超出上游 `ulw-plan` 只读委托白名单，为经裁决的有意豁免，记入 README 已裁决相抵点。
 
 ### D-010 计划与执行账本物理分离
 
@@ -272,6 +273,18 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
   - **上下文防污染**：定向 read（目标区域带区间）、改后不回读全文、非平凡探索一律 explore/librarian。
   - 边界：Atlas 不适用（计划路径仍是纯编排、不写产品代码）；`omo-adaptive-execution` 路径选择表的「恰好 1 worker」条款以 Sisyphus overlay 例外标注。
 - 验收：`sisyphus.md` 无「必派恰好 1」「禁止 edit/write」残留、无「必须/仅限」式自改硬分界；skill 路径选择表含 Sisyphus 例外与 Atlas 不适用标注；canary 按 D-011 待首个真实任务补（度量：自改扩散率、回归一次通过率、修正自修/派修比、父级上下文增幅）。
+
+### D-032 委托契约对齐上游六段（上游优先）
+
+- 状态：`active`
+- 决策（2026-08-25 用户裁决「上游优先，我们改不了」，skills 仓 SK-010 主载体）：本地委托六段（`[CONTEXT][GOAL][STOP WHEN][EVIDENCE][DOWNSTREAM][REQUEST]`）与上游 MUST 级六段模板（`TASK / EXPECTED OUTCOME / REQUIRED TOOLS / MUST DO / MUST NOT DO / CONTEXT`）双强制并存、运行时行为不可判定，上游不可改，本地对齐。prompts 侧：`sisyphus.md` 委托契约行改引上游六段并保留 `CONTEXT` 目标语义锚（D-031 语义不变）；排水点验收与 `atlas.md` tdd 证据引用由 `[EVIDENCE]` 改为 `EXPECTED OUTCOME` 段。
+- 验收：两 prompt 无旧六段名残留；语义锚与红绿两段证据要求保留。
+
+### D-033 上游相抵点显式记载（统筹审计）
+
+- 状态：`active`
+- 决策（2026-08-25，五角色三层栈统筹审计后）：本地对上游的经裁决相抵点统一记入 README「已裁决相抵点」清单（工件体制、审查触发、Atlas 并发与验收三处、基线预验白名单），逐条带决策号，上游版本核对时以清单为豁免依据。`omo-plan-structure` 的 scaffold 豁免条款由此获得决策背书；上游规划期 draft 恢复点无本地对应物记为已知缺口。已裁决缝隙之外仍待用户裁决：上游 Momus 输入契约只认 `.omo/plans/*.md` 路径模式与本地 `docs/plans/` 存储的冲突。同批审计措辞修复：`prometheus.md` 重复段删除与「检查点与集成」节名对齐、`WHY_NOT_LOWER_COST` 点名能力缺口、`momus.md` 空引用与矩阵列名复制清理、「基线未验」豁免、`atlas.md` 父级定义/补救预算计数/终态消歧/Final Wave 承载注、`sisyphus.md` 蜂群「尽量」软化与视觉/前端不自改。
+- 验收：README 含相抵点清单且逐条带决策号；审计所列措辞级问题在各 prompt 无残留。
 
 ## 已废弃决策
 
