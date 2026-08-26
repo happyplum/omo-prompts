@@ -87,6 +87,7 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
 - 决策：每个 dispatch wave 开始时，按并发预算在同一回合 fan-out 独立 ready task；已派发的独立任务互不阻塞；任何 delegation 返回后完成该 task 的逐 task 验收与 checkbox 更新，才能补位派发新任务；依赖该产物的 task 仅在其 ACCEPTED 后可派发。单轮派发量 = min(ready set, 并发预算)。上游逐 task 验收节奏不变（S-002 边界不破）。
 - 验收：scorecard 显示后台派发率 >0；不存在「验证未完成即阻塞无依赖 ready task」的串行门；canary 执行初始预算 2。
 - 修订（2026-08-22，D-026）：验收节奏改为节点统一召回——预算内持续 fan-out 补位，验收集中在 wave 末/检查点/依赖解锁前/终态排水；预算上限（运行中+未验收）仍为强制背压。
+- 修订（2026-08-26，D-039）：节点统一召回废止，验收回归上游「验证过即勾选」逐 task 节奏；预算 fan-out 与背压口径保留。
 
 ### D-009 计划可执行性前置门
 
@@ -101,6 +102,7 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
 - 决策：计划文档只含静态契约区块；checkbox、回执、尝试次数、review 结论等动态状态写入独立 append-only 执行账本（条目带 revision 锚），会话恢复 = 重放尾部，禁止原地编辑。主上下文只保留活动 cohort 的紧凑索引。
 - 验收：计划文件在执行期不因状态更新而膨胀；崩溃续走能从账本尾部重建状态。
 - 修订（2026-08-22，D-027）：task 行勾选状态随 `ACCEPTED` 投影为 `- [x]`（属计划正文当前生效投影），其余动态状态仍只在账本。
+- 修订（2026-08-26，D-039）：执行账本载体由 `<plan>.ledger.md` 改为上游 `.omo/start-work/ledger.jsonl`；只追加、重放恢复、紧凑索引原则不变；勾选投影随验证通过（`AdversarialVerify` confirmed）。
 
 ### D-011 治理改动必须可证伪
 
@@ -119,6 +121,7 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
 - 状态：`active`
 - 决策：C1-C6 落地后经 Oracle 一致性验收与 Metis 盲区复扫的修正——并发预算单一来源（矩阵可声明 `concurrency_budget` 覆盖默认 3/4，atlas/prometheus/执行 skill 三方对齐，canary 预算以计划字段承接）；`cohorts: none` 按单 writer 单 lane 判定（允许串行多 task，不按 task 数）；「checkbox 更新」指向账本 append 事件、计划正文只读；红 baseline 例外放行 disposition 唯一映射的 remediation task；计划修订记录迁入账本（正文严格五区块）；DELTA 复审补 `CARRIED` 状态与资格证据字段。
 - 验收：三方预算措辞一致；旧格式计划在 linter v2 下 fail-closed；DELTA 模式存在合法完整 PASS 路径。
+- 修订（2026-08-26，D-039）：CAS 三元组与 `checklist_hash` 废除（完成判定回归 DoneClaim/AdversarialVerify）；并发预算单一来源条款保留。
 
 ### D-014 提示词与脚本解耦；机械校验仅显式触发
 
@@ -172,6 +175,7 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
   - 执行账本 `<plan>.ledger.md` 只保留在主目录（计划所在目录），不复制到 worktree；全部 append 统一写入主目录账本，worktree 内不产生账本副本。
   - 当前目录为 git worktree 时，禁用主目录的 codegraph 索引（不向 codegraph 工具传主目录 `projectPath`），改用 worktree 内 grep/read 或自建索引。
 - 验收：worktree 内无账本副本；worktree 会话中不存在指向主目录的 codegraph 调用。
+- 修订（2026-08-26，D-039）：账本主目录路径条款由 `<plan>.ledger.md` 改为上游 `.omo/start-work/ledger.jsonl`；codegraph 锚定主目录条款不变。
 
 ### D-021 验收契约初始基线与三级现场裁决
 
@@ -322,6 +326,15 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
   - **Momus 完善不执笔**（确认既有边界）：审核完善通过「blocker 到可直接修订粒度 + tdd/split/route 三判定」实现，修订的笔归 Prometheus，保持评审独立性；「温链复审」等轮次词汇从 momus.md 移除，增量范围由复审委托载明。
 - 验收：metis.md 无调用阶段分支；oracle.md 无审查模式语句；prometheus.md 含 Oracle 架构咨询触发条款；omo-plan-review Oracle 注入为架构师评估（SK-014）。
 
+### D-039 Atlas 回归上游执行状态体系（boulder / ledger.jsonl / 完成契约承接）
+
+- 状态：`active`
+- 决策（2026-08-26 用户裁决「还是优先上游的政策，我们这多余的步骤可以去除」；两边界裁决：验收节奏回上游「验证过即勾选」，验证强度保留 D-006）。计划路径执行状态体系整体回归上游：
+  - **承接**：boulder.json 状态（经 `/start-work` 或首个 wave 前写入，续跑 hook、`BOULDER COMPLETE` 响应、`FINAL WAVE` 判定词全生态生效）；notepad 经验本（上游正文原生生效，不豁免）；`.omo/start-work/ledger.jsonl` 为唯一执行账本（本地事件 `review_verdict` / `plan_revision` / `prompt_rev` 改为 jsonl 条目）；DoneClaim→AdversarialVerify 完成契约（`confirmed` 唯一通过；高风险 gate reviewer 或新会话 fresh reviewer，其余父级 root-verify——Atlas 不实现故合法）。
+  - **废除**：`<plan>.ledger.md` 账本、`ACCEPTED(revision)` 单门与 CAS 三元组（`checklist_hash` 字段随之废除）、节点统一召回验收（wave 末/依赖解锁前节点取消；检查点/集成/终态排水降为聚合强化点）。
+  - **保留（上游无对应物）**：并发预算与波次背压（D-005/D-013 预算体制）、契约三级裁决（D-021）、路由经济性与升档（SK-003）、三判定消费（D-030）、基线补验（D-009）、防劫持（D-029）、按比例验证强度（D-006）、Sisyphus 蜂群滑动并发日常路径不受影响（D-028/D-031）。
+- 验收：`atlas.md` 无 `<plan>.ledger.md` / `ACCEPTED` / `CAS` / `checklist_hash` 残留，含「续跑 hook 契约」节与 DoneClaim/AdversarialVerify 条款；`omo-plan-structure` 账本分离节载体为 ledger.jsonl。
+
 ## 已废弃决策
 
 ### S-001 本地优先级声明
@@ -336,6 +349,7 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
 - 已废弃：用本地触发式批量验收替代上游逐 task 验收或 checkbox 节奏。
 - 替代：保留上游最低验收节奏，本地 checkpoint 只增加更强 gate。
 - 补注（2026-08-22，D-026）：节点统一召回保留依赖 ACCEPTED 门与高风险逐 task 验收，与曾废弃的纯批量验收不同，不构成回退。
+- 补注（2026-08-26，D-039）：本地已按用户裁决回归上游逐 task 验证节奏（验证过即勾选），与本条「保留上游最低节奏」方向一致；曾废弃的本地批量验收体系不以任何形式回归。
 
 ### S-003 固定 reviewer 流程
 

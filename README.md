@@ -35,7 +35,6 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 ### 技术债
 
 - `tech-debt`：上下文压缩的 100K token 水位目标无可观察的 token 信号，压缩时机依赖代理自估，属平台层缺口。
-- `tech-debt`：`vcs: none` 计划下 `ACCEPTED(revision)` 没有可靠的 revision 来源，版本 CAS 静默失效，只能以产物路径加 mtime 近似。
 
 ## 全局 AGENTS 同步
 
@@ -53,7 +52,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 | 文件 | 作用 |
 |------|------|
 | `prometheus.md` | 在上游计划契约内补充需求溯源、owner/failure-family 原子化证据、三类执行拓扑、计划分级（轻量/完整）、路由初标、验收 checkpoint 与 workspace lane 契约；计划审查默认不送审，完成后只提供三选项（直接执行 / Momus 单审 / Oracle 循环→Momus 循环） |
-| `atlas.md` | 在上游逐 delegation 验证与 checkbox 更新之上，补充 execution-only 边界（含无计划新需求处置与角色劫持防护）、节点统一召回验收（wave 末/检查点/依赖门/终态排水）、审查判定消费（tdd 注入 / split REMAP / route preflight 采纳 + review_verdict 入账）、契约三级裁决、账本与 CAS、工作区与集成裁决 |
+| `atlas.md` | 回归上游执行状态体系（boulder 续跑 hook、`ledger.jsonl` 账本、DoneClaim→AdversarialVerify 完成契约、验证过即勾选），补充 execution-only 边界（含无计划新需求处置与角色劫持防护）、审查判定消费（tdd 注入 / split REMAP / route preflight 采纳 + review_verdict 入账）、契约三级裁决、并发预算与工作区集成裁决 |
 | `sisyphus.md` | 强化小团队 Leader 的轻量混合执行：简单自改（定向操作不污染上下文）、蜂群滑动并发（依赖就绪集单批爆发 + 滑动补位、运行中+未验收 ≤6）、统一回归验收（少量自修 / 量大派修）与经济路由 |
 | `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
 | `momus.md` | 在官方 Reference Validation、Executability、Critical Blockers、QA Scenario Executability 四类审查内，使用原子化、拓扑、工作区和上下文胶囊作为证据判据；附 tdd / split / route 三类执行判定（verdict 附件，直通执行期）；不新增 blocker 类别或本地复审上限 |
@@ -106,10 +105,9 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 
 - **计划工件体制**：不经上游 `ulw-plan` scaffold、计划存 `.omo/plans/`（上游计划工位，Momus 输入契约与 `/start-work` 由此识别——D-036/SK-013 对齐，scaffold 豁免见 `omo-plan-structure`）；上游规划期 draft 恢复点无本地对应物，为已知缺口。
 - **审查触发**：上游 UNCLEAR 自动送审、high-accuracy 修饰词当轮强制送审与「执行还是高精度审查」交付问句均不予执行，触发权只在用户三选项（D-026/D-030；D-035 行为级覆盖，真实会话曾自动发起双审）。
-- **Atlas 并发与验收**：`run_in_background` 默认 true 对上游 NEVER（D-005/D-008）；验收节点化替换上游逐 task 勾选门（D-008/D-026）；防劫持条款阻断上游 start-work No-plan bootstrap（D-029）。
+- **Atlas 并发**：`run_in_background` 默认 true 对上游 NEVER（D-005/D-008）；防劫持条款阻断上游 start-work No-plan bootstrap（D-029）。执行状态体系已回归上游（boulder 续跑 hook、`ledger.jsonl` 账本、DoneClaim→AdversarialVerify 完成契约、验证过即勾选——D-039/SK-015，非相抵项）。
 - **基线预验**：派 quick 档执行子代理超出上游 ulw-plan 只读委托白名单（D-009）。
 - **验证降样**：上游逐 delegation 全套 `lsp_diagnostics`+build+test 与 Manual QA Gate，被本地按比例验证（最小充分、NON-CUMULATIVE）替代（D-006）。
-- **待裁决**：Atlas 上游状态体系双轨——notepad、boulder 响应、`.omo/start-work/ledger.jsonl`、DoneClaim/AdversarialVerify 既未承接也未豁免；执行入口与 `/start-work` 流程的关系未定义。
 
 ### 上游提示词探查顺序
 
