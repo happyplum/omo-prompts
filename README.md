@@ -57,8 +57,8 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 | `sisyphus.md` | 强化小团队 Leader 的轻量混合执行：简单自改（定向操作不污染上下文）、蜂群滑动并发（依赖就绪集单批爆发 + 滑动补位、运行中+未验收 ≤6）、统一回归验收（少量自修 / 量大派修）与经济路由 |
 | `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
 | `momus.md` | 在官方 Reference Validation、Executability、Critical Blockers、QA Scenario Executability 四类审查内，使用原子化、拓扑、工作区和上下文胶囊作为证据判据；附 tdd / split / route 三类执行判定（verdict 附件，直通执行期）；不新增 blocker 类别或本地复审上限 |
-| `oracle.md` | 按需提供阶段适配的架构与研究方案，抑制细枝末节和投机性安全冗余 |
-| `metis.md` | 规划前以有界头脑风暴分析意图；执行期在冻结契约内生成最小执行图 |
+| `oracle.md` | 资深架构师纯职：制定架构方案与必要技术细节、搜索技术盲点、给出可落地建议；抑制细枝末节和投机性安全冗余 |
+| `metis.md` | 以委托指明的问题域为边界分析意图与盲点；每轮最多 3 个定向问题，续问结合回答收敛至定位清晰 |
 | `DECISIONS.md` | 记录用户长期需求、兼容原则、可观察验收和已废弃决策，防止 prompt 行为回退 |
 | `runtime/AGENTS.md` | 全局治理规则的可提交源文件 |
 | `scripts/sync-agents.ps1` | 生成并校验运行时 `../AGENTS.md` |
@@ -72,7 +72,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 - 每份 Markdown 只有一个描述文件用途的 H1，其余章节保持递增层级（markdownlint MD025 / MD041 clean）。
 - 角色 prompt 只保留必要的准则、参考、约束与防漂移规则；禁止写入元声明、免责声明、兼容性声明及「本节只补充」「上游规则继续有效」等无行为约束力的表述。
 - **行为 prompt 自包含**：角色文件正文不引用 `DECISIONS.md` 编号或仓库内部记账；规则的约束力来自条文本身，消费 prompt 的模型不知道也不需要知道决策编号。溯源记录只存在于 `DECISIONS.md`。
-- **派发方持有协议，角色 prompt 只承载判定标准**：跨角色协作协议（审查模式标注、轮次编排、会话续用策略、胶囊构造、阻断标准注入、移交规则、输出格式契约）只写在派发方的编排文件（计划审查→`omo-plan-review` skill，执行验收→`atlas.md`，日常委托→`sisyphus.md`），派发时写进 `task()` 委托 prompt；响应方角色 prompt 不含模式协议、轮次词汇、调度逻辑或对其他文件的元声明，只保留自身判定标准与对委托所附内容的消费。同一规则禁止双份维护，发现重复时保留派发方、从响应方删除。自查口诀：这条行为是「我自己怎么判断」还是「别人怎么调度我」——后者移到派发方。
+- **派发方持有协议，角色 prompt 只承载判定标准**：跨角色协作协议（审查模式标注、轮次编排、会话续用策略、胶囊构造、阻断标准注入、移交规则、输出格式契约）只写在派发方的编排文件（计划审查→`omo-plan-review` skill，执行验收→`atlas.md`，日常委托→`sisyphus.md`），派发时写进 `task()` 委托 prompt；响应方角色 prompt 不含模式协议、调用阶段分支、轮次词汇、调度逻辑或对其他文件的元声明，只保留自身判定标准与对委托所附内容的消费；一个角色一个职业，调用场景由派发方在委托中写明意图。同一规则禁止双份维护，发现重复时保留派发方、从响应方删除。自查口诀：这条行为是「我自己怎么判断」还是「别人怎么调度我」——后者移到派发方。
 
 ### 提交与生效
 
