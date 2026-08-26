@@ -104,11 +104,12 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 
 上游不可改，以下与上游的相抵点均经决策裁决；上游版本核对时以本清单为豁免依据，不得当作待删冲突：
 
-- **计划工件体制**：不经上游 `ulw-plan` scaffold、计划存 `docs/plans/`（`omo-plan-structure` 豁免条款）；上游规划期 draft 恢复点无本地对应物，为已知缺口。
+- **计划工件体制**：不经上游 `ulw-plan` scaffold、计划存 `.omo/plans/`（上游计划工位，Momus 输入契约与 `/start-work` 由此识别——D-036/SK-013 对齐，scaffold 豁免见 `omo-plan-structure`）；上游规划期 draft 恢复点无本地对应物，为已知缺口。
 - **审查触发**：上游 UNCLEAR 自动送审、high-accuracy 修饰词当轮强制送审与「执行还是高精度审查」交付问句均不予执行，触发权只在用户三选项（D-026/D-030；D-035 行为级覆盖，真实会话曾自动发起双审）。
 - **Atlas 并发与验收**：`run_in_background` 默认 true 对上游 NEVER（D-005/D-008）；验收节点化替换上游逐 task 勾选门（D-008/D-026）；防劫持条款阻断上游 start-work No-plan bootstrap（D-029）。
 - **基线预验**：派 quick 档执行子代理超出上游 ulw-plan 只读委托白名单（D-009）。
-- **未裁决缝隙**：上游 Momus 输入契约只认 `.omo/plans/*.md` 路径模式，与本地 `docs/plans/` 存储冲突，待用户裁决。
+- **验证降样**：上游逐 delegation 全套 `lsp_diagnostics`+build+test 与 Manual QA Gate，被本地按比例验证（最小充分、NON-CUMULATIVE）替代（D-006）。
+- **待裁决**：Atlas 上游状态体系双轨——notepad、boulder 响应、`.omo/start-work/ledger.jsonl`、DoneClaim/AdversarialVerify 既未承接也未豁免；执行入口与 `/start-work` 流程的关系未定义。
 
 ### 上游提示词探查顺序
 
