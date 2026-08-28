@@ -12,16 +12,16 @@
 
 ## 续跑 hook 契约（上游 boulder 生态）
 
-- **状态写入**：计划启动时确保 `.omo/boulder.json` 存在（上游 schema：`active_plan`、`plan_name`、`session_ids` 按上游前缀规范、`status: active`）；经 `/start-work` 进入由入口写入，不经入口时首个 wave 派发前自行写入。后台 `task()` 派发由 hook 自动挂入会话血统，无需额外登记。
+- **状态写入**：计划启动时确保 `.omo/boulder.json` 存在（上游 schema：`active_plan`、`plan_name`、`session_ids` 按上游前缀规范、`status: active`）；经 `/ulw-execute` 进入由入口写入，不经入口时首个 wave 派发前自行写入。后台 `task()` 派发由 hook 自动挂入会话血统，无需额外登记。
 - **checkbox 即进度**：计划 checkbox 是续跑 hook 的可见进度投影——每个 task 验证通过即勾选 `- [ ]` → `- [x]` 并 append `task-completed` 条目，随后继续下一个，不询问是否继续；全部勾选后运行计划终验命令。
 - **完成响应**：收到 `BOULDER COMPLETE` nudge 时输出 `ORCHESTRATION COMPLETE` 总结块（计划路径、终验命令、产物、清理收据），把 boulder work 标记完成，再按终态顺序收口。
 - **终验判定词**：最终验证结果以 `FINAL WAVE: F1 [APPROVE] | F2 [APPROVE] | …` / `FINAL WAVE PASSED` 形态呈现，兼容 final-wave-approval-gate。
 
 ## 执行账本（上游 ledger.jsonl）
 
-- 执行证据与状态统一 append 到上游 `.omo/start-work/ledger.jsonl`（一行一个 JSON 对象，至少含 `event`、`plan`、`task`、`session_id`、`commands`、`artifact`、`adversarial_classes`、`cleanup` 字段）；task 级信息（`task_id`、`owner`、`route`、`尝试次数`、`关联提交`）随其事件条目携带。
+- 执行证据与状态统一 append 到上游 `.omo/ulw-execute/ledger.jsonl`（一行一个 JSON 对象，至少含 `event`、`plan`、`task`、`session_id`、`commands`、`artifact`、`adversarial_classes`、`cleanup` 字段）；task 级信息（`task_id`、`owner`、`route`、`尝试次数`、`关联提交`）随其事件条目携带。
 - 本地特有事件同载体入账：`review_verdict`（计划版本 + 各 task 判定摘要）、`plan_revision`（`kind: contract_change | topology_remap`、变更摘要、`authority`、生效后摘要、失效范围）、`prompt_rev`（首个 wave 时 prompts 仓 `git rev-parse --short HEAD`）。修订仅当事件摘要与修订后实际摘要一致时生效；不一致即 fail-closed，停止派发、验收与恢复。
-- 账本只追加、不回改；文件在主工作区 `.omo/start-work/`，不复制到任何 lane worktree；会话恢复时重放尾部重建索引；上下文内只保留当前 wave 紧凑索引（task_id、cohort 归属、硬前驱、完成状态、未决阻塞点）。
+- 账本只追加、不回改；文件在主工作区 `.omo/ulw-execute/`，不复制到任何 lane worktree；会话恢复时重放尾部重建索引；上下文内只保留当前 wave 紧凑索引（task_id、cohort 归属、硬前驱、完成状态、未决阻塞点）。
 
 ## 契约裁决
 

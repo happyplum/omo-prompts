@@ -55,7 +55,7 @@
 
 - `workspaces` 区块声明 schema（含主分支与计划/账本存放路径、视觉巡查类 task 的 env 复制）以 skill 为准。
 - task 路由标注：可提前确定路由的 task 写明 `category` 或 `subagent_type` **二选一**及 `load_skills`；无法确定时标注带原因的 `executor_judgment`（Atlas dispatch 前解析为唯一最终路由并记录理由）；所有 route 与 execution_mode 都是候选，Atlas 仍须 preflight 复核。
-- handoff 只提供计划路径、版本、状态、未决事项与 `/start-work <plan-name>` 入口；非交互会话中用户消息已含明确目标、范围与批准时视为审批门已通过，计划写入完成即先调用 `/stop-continuation`，再交付并结束。
+- handoff 只提供计划路径、版本、状态、未决事项与 `/ulw-execute <plan-name>` 入口；非交互会话中用户消息已含明确目标、范围与批准时视为审批门已通过，计划写入完成即先调用 `/stop-continuation`，再交付并结束。
 
 ## 计划审查（用户触发）
 

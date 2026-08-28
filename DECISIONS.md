@@ -335,6 +335,12 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
   - **保留（上游无对应物）**：并发预算与波次背压（D-005/D-013 预算体制）、契约三级裁决（D-021）、路由经济性与升档（SK-003）、三判定消费（D-030）、基线补验（D-009）、防劫持（D-029）、按比例验证强度（D-006）、Sisyphus 蜂群滑动并发日常路径不受影响（D-028/D-031）。
 - 验收：`atlas.md` 无 `<plan>.ledger.md` / `ACCEPTED` / `CAS` / `checklist_hash` 残留，含「续跑 hook 契约」节与 DoneClaim/AdversarialVerify 条款；`omo-plan-structure` 账本分离节载体为 ledger.jsonl。
 
+### D-040 上游命令改名适配（/start-work → /ulw-execute）
+
+- 状态：`active`
+- 决策（2026-08-26，上游 5.0.0-beta.24 实装核对）：上游将执行入口命令 `/start-work` 更名为 `/ulw-execute`（触发词含 execute plan / continue plan / resume plan），skill 目录改为 `dist/skills/ulw-execute/`，**执行账本路径随之改为 `.omo/ulw-execute/ledger.jsonl`**；`.omo/boulder.json`、`.omo/plans/`、notepads、DoneClaim/AdversarialVerify 契约、`FINAL WAVE` 判定词（bundle hook 词表）均未变。beta.19→24 全角色正文重提取 diff：仅 4 处命令名字符串变化（atlas 三变体 + prometheus-consultant），Momus 双变体零变化。本地活动引用同步更名：`atlas.md`（入口与账本路径）、`prometheus.md`（handoff 入口）、`omo-plan-structure`（workspaces 与账本分离节路径，skills 仓 SK-016）。历史决策文本中的旧名以本条为准，不逐一改写。
+- 验收：两仓活动文件无 `/start-work` 与 `.omo/start-work/` 残留；`docs/upstream-baseline/` 快照已刷新至 beta.24。
+
 ## 已废弃决策
 
 ### S-001 本地优先级声明

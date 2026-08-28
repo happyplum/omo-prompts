@@ -93,7 +93,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 本地 append 已对照以下固定版本审查：
 
 - Oh My OpenAgent：`code-yeongyu/oh-my-openagent@e676fef9`（5.0.0-beta.12）
-- 2026-08-26 实测：`auto_update` 已将实装缓存静默升至 **5.0.0-beta.19**（本地缓存无 commit 锚点，以 version 为准）；上游正文快照与重提取标记见配置根 `docs/upstream-baseline/`，协同手册见 `docs/omo-upstream-playbook.md`（均不入本仓）
+- 2026-08-26 实测：`auto_update` 一天内将实装缓存自 beta.12 静默升至 **5.0.0-beta.24**（本地缓存无 commit 锚点，以 version 为准；beta.24 将 `/start-work` 更名 `/ulw-execute`，见 D-040）；上游正文快照与重提取标记见配置根 `docs/upstream-baseline/`，协同手册见 `docs/omo-upstream-playbook.md`（均不入本仓）
 - OpenCode：`anomalyco/opencode@550d1ffd24718454925c4636e937878f0274de48`
 
 2026-08-20 核对：运行缓存曾滞留 `5.0.0-beta.7`（`auto_update` 未自动刷新缓存目录），已手动刷新至 `5.0.0-beta.12`，重启后生效（见「维护规范」）；上游行为核对一律以实装版本为准。
@@ -104,9 +104,9 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 
 上游不可改，以下与上游的相抵点均经决策裁决；上游版本核对时以本清单为豁免依据，不得当作待删冲突：
 
-- **计划工件体制**：不经上游 `ulw-plan` scaffold、计划存 `.omo/plans/`（上游计划工位，Momus 输入契约与 `/start-work` 由此识别——D-036/SK-013 对齐，scaffold 豁免见 `omo-plan-structure`）；上游规划期 draft 恢复点无本地对应物，为已知缺口。
+- **计划工件体制**：不经上游 `ulw-plan` scaffold、计划存 `.omo/plans/`（上游计划工位，Momus 输入契约与 `/ulw-execute` 由此识别——D-036/SK-013 对齐，scaffold 豁免见 `omo-plan-structure`）；上游规划期 draft 恢复点无本地对应物，为已知缺口。
 - **审查触发**：上游 UNCLEAR 自动送审、high-accuracy 修饰词当轮强制送审与「执行还是高精度审查」交付问句均不予执行，触发权只在用户三选项（D-026/D-030；D-035 行为级覆盖，真实会话曾自动发起双审）。
-- **Atlas 并发**：`run_in_background` 默认 true 对上游 NEVER（D-005/D-008）；防劫持条款阻断上游 start-work No-plan bootstrap（D-029）。执行状态体系已回归上游（boulder 续跑 hook、`ledger.jsonl` 账本、DoneClaim→AdversarialVerify 完成契约、验证过即勾选——D-039/SK-015，非相抵项）。
+- **Atlas 并发**：`run_in_background` 默认 true 对上游 NEVER（D-005/D-008）；防劫持条款阻断上游 ulw-execute No-plan bootstrap（D-029）。执行状态体系已回归上游（boulder 续跑 hook、`ledger.jsonl` 账本、DoneClaim→AdversarialVerify 完成契约、验证过即勾选——D-039/SK-015，非相抵项）。
 - **基线预验**：派 quick 档执行子代理超出上游 ulw-plan 只读委托白名单（D-009）。
 - **验证降样**：上游逐 delegation 全套 `lsp_diagnostics`+build+test 与 Manual QA Gate，被本地按比例验证（最小充分、NON-CUMULATIVE）替代（D-006）。
 
@@ -116,7 +116,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 
 1. 先读 `~/.omo/omo.jsonc` 确定各 agent 当前绑定的模型；
 2. 在 `~/.cache/opencode/packages/oh-my-openagent@beta/node_modules/oh-my-openagent/dist/agents/` 下按模型找专属变体（文件名含模型后缀，或 `createXAgent(model)` / `getXPrompt(model)` 按模型分流）；default 版只用于核对兼容性，不作为运行时行为基线；
-3. 明文内嵌的变体（d.ts 中 `= "..."`）可直接读取；其余角色的正文以字符串字面量内嵌于 `dist/index.js` 捆绑包，可按标记（如 `You are Atlas`）取字节偏移后提取解码；完全无文本形态的才改以 `ulw-plan` / `start-work` skill 与 hook 契约为镜像核对。
+3. 明文内嵌的变体（d.ts 中 `= "..."`）可直接读取；其余角色的正文以字符串字面量内嵌于 `dist/index.js` 捆绑包，可按标记（如 `You are Atlas`）取字节偏移后提取解码；完全无文本形态的才改以 `ulw-plan` / `ulw-execute` skill 与 hook 契约为镜像核对。
 
 已探明边界（2026-08-25，bundle 提取法更新）：
 
@@ -124,9 +124,9 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 |---|---|---|---|
 | momus | openai/gpt-5.6-sol | ✅ `momus-gpt-5-6.d.ts`（default 备用 `momus.d.ts`） | — |
 | prometheus | zhipuai-coding-plan/glm-5.3 | ✅ bundle 提取：consultant / planner（Ultrawork 注入）两变体 | `ulw-plan` |
-| atlas | openai/gpt-5.6-terra | ✅ bundle 提取：default / gemini / glm 三变体（terra 专属未提取，以 default 为基线参照） | `start-work` |
+| atlas | openai/gpt-5.6-terra | ✅ bundle 提取：default / gemini / glm 三变体（terra 专属未提取，以 default 为基线参照） | `ulw-execute` |
 | oracle | openai/gpt-5.6-sol | ✅ bundle 提取：单一正文（文中写 based on GPT-5.5，gpt-5.6 专属变体是否存在待核） | — |
-| sisyphus | zhipuai-coding-plan/glm-5.3 | ✅ bundle 提取：glm-5-2 role 块 / default identity 块 / 动态完整版（glm-5.3 实际组装文本未确证） | `start-work` |
+| sisyphus | zhipuai-coding-plan/glm-5.3 | ✅ bundle 提取：glm-5-2 role 块 / default identity 块 / 动态完整版（glm-5.3 实际组装文本未确证） | `ulw-execute` |
 | metis | zhipuai-coding-plan/glm-5.3 | ❌ 未探查 | — |
 
 模型绑定变化后，按新绑定重新探查明文变体，并在上表更新探明边界。
