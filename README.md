@@ -93,7 +93,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 本地 append 已对照以下固定版本审查：
 
 - Oh My OpenAgent：`code-yeongyu/oh-my-openagent@e676fef9`（5.0.0-beta.12）
-- 2026-08-26 实测：`auto_update` 一天内将实装缓存自 beta.12 静默升至 **5.0.0-beta.24**（本地缓存无 commit 锚点，以 version 为准；beta.24 将 `/start-work` 更名 `/ulw-execute`，见 D-040）；上游正文快照与重提取标记见配置根 `docs/upstream-baseline/`，协同手册见 `docs/omo-upstream-playbook.md`（均不入本仓）
+- 2026-08-26 实测：`auto_update` 一天内将实装缓存自 beta.12 静默升至 **5.0.0-beta.24**（本地缓存无 commit 锚点，以 version 为准；beta.24 将 `/start-work` 更名 `/ulw-execute`，见 D-040）；上游正文快照与重提取标记见配置根 `docs/omo/upstream-baseline/`，协同手册见 `docs/omo/upstream-playbook.md`（均不入本仓）
 - OpenCode：`anomalyco/opencode@550d1ffd24718454925c4636e937878f0274de48`
 
 2026-08-20 核对：运行缓存曾滞留 `5.0.0-beta.7`（`auto_update` 未自动刷新缓存目录），已手动刷新至 `5.0.0-beta.12`，重启后生效（见「维护规范」）；上游行为核对一律以实装版本为准。
