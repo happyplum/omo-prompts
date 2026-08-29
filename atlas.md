@@ -14,6 +14,7 @@
 
 - **状态写入**：计划启动时确保 `.omo/boulder.json` 存在（上游 schema：`active_plan`、`plan_name`、`session_ids` 按上游前缀规范、`status: active`）；经 `/ulw-execute` 进入由入口写入，不经入口时首个 wave 派发前自行写入。后台 `task()` 派发由 hook 自动挂入会话血统，无需额外登记。
 - **checkbox 即进度**：计划 checkbox 是续跑 hook 的可见进度投影——每个 task 验证通过即勾选 `- [ ]` → `- [x]` 并 append `task-completed` 条目，随后继续下一个，不询问是否继续；全部勾选后运行计划终验命令。
+- **todos 镜像**：启动时把计划全量预注册为 todos（每个 wave 一条、每个 task 一条——文本含 `task_id` 与路由/owner 摘要、Final Verification Wave 一条），不内存持有；派发该 task 即置进行中，验证通过即置完成并与 checkbox 同步；计划外发现的工作（REMAP、补救、环境修复）先注册 todo 再执行。todos、boulder 与 checkbox 三方始终是同一进度叙事。
 - **完成响应**：收到 `BOULDER COMPLETE` nudge 时输出 `ORCHESTRATION COMPLETE` 总结块（计划路径、终验命令、产物、清理收据），把 boulder work 标记完成，再按终态顺序收口。
 - **终验判定词**：终验通过后输出 `VERDICT: APPROVE`（final-wave-approval-gate hook 实际匹配 `/\bVERDICT:\s*(APPROVE|REJECT)\b/`，reject 同理）；`FINAL WAVE: F1 [APPROVE] | …` 汇总行与 `FINAL WAVE PASSED` 可作展示格式一并输出。
 

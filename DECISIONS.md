@@ -342,6 +342,16 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
 - 决策（2026-08-26，上游 5.0.0-beta.24 实装核对）：上游将执行入口命令 `/start-work` 更名为 `/ulw-execute`（触发词含 execute plan / continue plan / resume plan），skill 目录改为 `dist/skills/ulw-execute/`，**执行账本路径随之改为 `.omo/ulw-execute/ledger.jsonl`**；`.omo/boulder.json`、`.omo/plans/`、notepads、DoneClaim/AdversarialVerify 契约、`FINAL WAVE` 判定词（bundle hook 词表）均未变。beta.19→24 全角色正文重提取 diff：仅 4 处命令名字符串变化（atlas 三变体 + prometheus-consultant），Momus 双变体零变化。本地活动引用同步更名：`atlas.md`（入口与账本路径）、`prometheus.md`（handoff 入口）、`omo-plan-structure`（workspaces 与账本分离节路径，skills 仓 SK-016）。历史决策文本中的旧名以本条为准，不逐一改写。
 - 验收：两仓活动文件无 `/start-work` 与 `.omo/start-work/` 残留；`docs/upstream-baseline/` 快照已刷新至 beta.24。
 
+### D-041 todos 纪律（详细镜像与即时更新）
+
+- 状态：`active`
+- 决策（2026-08-29 用户裁决「Atlas 生成的 todos 要详细，所有模型都要及时更新 todos」；实为 D-039 上游承接的漏项补齐——上游 `ulw-execute` L54-55 本有对应条款）：todos 是对用户可见的进度事实源。
+  - **详细（Atlas）**：启动时把计划全量预注册为 todos——每个 wave 一条、每个 task 一条（文本含 `task_id` 与路由/owner 摘要）、Final Verification Wave 一条；不内存持有；计划外工作（REMAP/补救/环境修复）先注册 todo 再执行（承接上游 "Register every phase and task as todos… never keep tasks in memory only"）。
+  - **即时（所有模型）**：全局 `runtime/AGENTS.md` 执行纪律新增「todo 纪律」（覆盖全部角色与子代理）——开始执行该单元即置进行中、验证通过即置完成、不批量滞后补记、新发现工作先注册再执行；todo 与计划勾选、账本等进度载体同一叙事（承接上游 "Keep them current at every moment… never batch-complete at the end"）。
+  - **三方一致**：todos、boulder、计划 checkbox 始终同一进度叙事（atlas.md 条款承载）。
+  - Sisyphus 蜂群路径：todo 即轻量锚点不变，补充即时更新语义（派发即进行中、排水点验收后勾销）。
+- 验收：`atlas.md` 含 todos 镜像条款；`runtime/AGENTS.md`（及同步后的 config 根 `AGENTS.md`）含全局 todo 纪律；`sisyphus.md` todo 条款含即时更新。
+
 ## 已废弃决策
 
 ### S-001 本地优先级声明
