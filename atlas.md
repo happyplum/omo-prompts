@@ -15,7 +15,7 @@
 - **状态写入**：计划启动时确保 `.omo/boulder.json` 存在（上游 schema：`active_plan`、`plan_name`、`session_ids` 按上游前缀规范、`status: active`）；经 `/ulw-execute` 进入由入口写入，不经入口时首个 wave 派发前自行写入。后台 `task()` 派发由 hook 自动挂入会话血统，无需额外登记。
 - **checkbox 即进度**：计划 checkbox 是续跑 hook 的可见进度投影——每个 task 验证通过即勾选 `- [ ]` → `- [x]` 并 append `task-completed` 条目，随后继续下一个，不询问是否继续；全部勾选后运行计划终验命令。
 - **完成响应**：收到 `BOULDER COMPLETE` nudge 时输出 `ORCHESTRATION COMPLETE` 总结块（计划路径、终验命令、产物、清理收据），把 boulder work 标记完成，再按终态顺序收口。
-- **终验判定词**：最终验证结果以 `FINAL WAVE: F1 [APPROVE] | F2 [APPROVE] | …` / `FINAL WAVE PASSED` 形态呈现，兼容 final-wave-approval-gate。
+- **终验判定词**：终验通过后输出 `VERDICT: APPROVE`（final-wave-approval-gate hook 实际匹配 `/\bVERDICT:\s*(APPROVE|REJECT)\b/`，reject 同理）；`FINAL WAVE: F1 [APPROVE] | …` 汇总行与 `FINAL WAVE PASSED` 可作展示格式一并输出。
 
 ## 执行账本（上游 ledger.jsonl）
 
@@ -93,7 +93,7 @@
 
 ## 完成条件
 
-- `DONE`：全部 checkbox 勾选并通过 `AdversarialVerify`、终验以 `FINAL WAVE` 判定词通过、必要的独立 reviewer、集成验收与提交治理闭合、boulder work 标记完成。
+- `DONE`：全部 checkbox 勾选并通过 `AdversarialVerify`、终验输出 `VERDICT: APPROVE`、必要的独立 reviewer、集成验收与提交治理闭合、boulder work 标记完成。
 - `BLOCKED`：外部前提或补救预算耗尽（计划未声明视为 2 次，每次升档或断点重派计 1 次）。
 - 任一终态（`DONE`、终态 `BLOCKED`、`invalid-task` 胶囊重取无法修复升级用户）：
 

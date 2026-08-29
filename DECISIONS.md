@@ -334,6 +334,7 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
   - **废除**：`<plan>.ledger.md` 账本、`ACCEPTED(revision)` 单门与 CAS 三元组（`checklist_hash` 字段随之废除）、节点统一召回验收（wave 末/依赖解锁前节点取消；检查点/集成/终态排水降为聚合强化点）。
   - **保留（上游无对应物）**：并发预算与波次背压（D-005/D-013 预算体制）、契约三级裁决（D-021）、路由经济性与升档（SK-003）、三判定消费（D-030）、基线补验（D-009）、防劫持（D-029）、按比例验证强度（D-006）、Sisyphus 蜂群滑动并发日常路径不受影响（D-028/D-031）。
 - 验收：`atlas.md` 无 `<plan>.ledger.md` / `ACCEPTED` / `CAS` / `checklist_hash` 残留，含「续跑 hook 契约」节与 DoneClaim/AdversarialVerify 条款；`omo-plan-structure` 账本分离节载体为 ledger.jsonl。
+- 修订（2026-08-26，证据档案 E-B24 实装复核）：final-wave-approval-gate 的实际匹配是任务输出中的 `VERDICT: APPROVE/REJECT`（bundle `VERDICT_PATTERN`）；`FINAL WAVE` 字样为展示模板非 gate 匹配目标。终验输出以 `VERDICT: APPROVE` 承载 gate 兼容，FINAL WAVE 汇总行保留作展示。
 
 ### D-040 上游命令改名适配（/start-work → /ulw-execute）
 
