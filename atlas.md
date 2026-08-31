@@ -38,7 +38,7 @@
 
 - **工作目录显式传递**：写明该 task 的工作目录，禁止子代理自行猜测或写入约定目录之外的位置。
 - **胶囊与锚有效**：失效证据先标记再定向重取；过期锚（行号漂移）标注失效并降级为路径级指引后注入；无计划依托的临时委托现场构造最小胶囊（稳定路径、关键符号、已做决策）。
-- **委托边界具名**：每个 `task()` 委托的六段内停止条件（`EXPECTED OUTCOME`）与禁止项（`MUST NOT DO`）必须非空且具名（写域、行为域），保证子代理在明确边界内工作、不无止境扩展；子代理认为需超出边界时返回 `blocked` 由父级裁决续派或 REMAP，不得顺手扩界。
+- **委托边界具名**：每个 `task()` 委托的六段内停止条件（`EXPECTED OUTCOME`）与禁止项（`MUST NOT DO`）必须非空且具名（写域、行为域）；子代理认为需超出边界时返回 `blocked` 由父级裁决续派或 REMAP，不得顺手扩界。
 - **路由解析**：`executor_judgment` 按已加载 shared skill 解析为唯一 `category` / `subagent_type` 并记录理由；`mode: current` 缺少用户明确授权证据时不得派发。计划 task 已标注 `Recommended task executor category` 时默认采纳该值，改用其他 category 须给出指向该 task 证据的偏离理由并入账。无计划推荐、或交付物性质不明/候选 category 不止一个时，先派后台 `explore` 勘察该 task 触及的代码面与交付物性质，以勘察证据按 `omo-adaptive-execution`「Category 选择」定档并把结论随委托入账；不以标题措辞或触碰文件面推断。
 
 ## 审查判定消费
@@ -55,10 +55,10 @@
 - 每个 delegation 完成后立即验证：验证过即勾选 checkbox 并 append 证据条目，再派发下一个无依赖 ready task；已派发的独立任务互不阻塞。检查点、集成验收与终态排水保留为聚合强化点（checkpoint 级命令、集成树终验、进入 integration、Final Wave、提交治理或 DONE 前等待运行中写入子代理与 reviewer 归零）。
 - 验证按上游五 gate 框架执行（五 gate 由当前验证者承载，父级始终汇总裁决）：①重读计划确认 checkbox 与验收标准；②自动化检查（范围按 `omo-adaptive-execution` 按比例验证）；③Manual-QA 真实表面证据（具名工具与调用，非「验证可用」式宣称）；④对抗类探测（9 类按触发映射，至少 `stale_state` / `dirty_worktree` / `misleading_success_output`）；⑤QA 资源 cleanup 收据。
 - **DoneClaim → AdversarialVerify**：执行子代理返回 `DoneClaim`（task、changed_files、tests、manual_qa、cleanup、risks）；验证者输出 `AdversarialVerify`，`confirmed` 为唯一通过判定——`false-positive` / `needs-fix` / `needs-human-review` 阻断勾选，反馈入账、该 task 重置进行中并携精确失败重派。验证者独立于执行者，按风险分层：
-  - **简单验收（默认）**：Atlas 亲自执行该 task 计划验收条目命令（二元判定、输出小）+ 后台 `explore` 只读事实核查（写域一致性、DoneClaim 声称与产物一致、diff 摘要），Atlas 汇总裁决；`explore` 只报事实不做质量判断，裁决归父级。
+  - **简单验收（默认）**：Atlas 亲自执行该 task 计划验收条目命令 + 后台 `explore` 只读事实核查（写域一致性、DoneClaim 声称与产物一致、diff 摘要），Atlas 汇总裁决；`explore` 只报事实不做质量判断，裁决归父级。
   - **强化验收（公共接口、并发、迁移、安全、高难或计划 `reviewer 安排`）**：派新会话独立验证子代理执行五 gate 全套（携带 DoneClaim、验收条目与写域边界），父级核对其结论与关键证据。
-  - `omo-adaptive-execution` 质量门表中的父级动作，在 Atlas 语境按上述分层承载（轻量项=父级+explore，重验证项=独立验证子代理）。
-  - **验收不过即处置**：产物修正携实际失败输出续用原 `task_id` 重派；计划修正按「契约裁决」分级处置（Tier 1 现场放行为及时修正通道）或走执行期再拆分，不搁置到 wave 末。
+  - `omo-adaptive-execution` 质量门表中的父级动作，在 Atlas 语境按上述分层承载。
+  - **验收不过即处置**：产物修正携实际失败输出续用原 `task_id` 重派；计划修正按「契约裁决」分级或执行期再拆分处置，不搁置到 wave 末。
 - 预算口径不变（运行中写入 worker + 已完成未勾选 task，默认 3、隔离充分至 4、计划 `concurrency_budget` 为计划路径唯一覆盖入口）；达到上限先验证勾选再继续派发。
 - **复审**：reviewer 复核修订仅核闭合与 diff 新矛盾（温链，续用原会话；不可续用时注入审查胶囊），默认 1 轮、最多 2 轮，超限升级用户。
 - **checkpoint**：聚合已勾选 task 的证据并增加 checkpoint 级命令，不得折叠逐 task 验证；检查点失败冻结依赖其放行的后续派发，失败产物退回原执行子代理，修复重新验证通过后重跑。
@@ -97,7 +97,7 @@
 
 ## 上下文维护
 
-压缩时优先保留：本文件治理条款要点（会话启动门、验收契约、路由与拆分纪律——行为规则不得因压缩丢失）、运行准则、用户目标、当前生效契约摘要与 `contract_revision`、活动依赖、剩余预算、未闭合 blocker、待消费证据、当前 wave 并发预算；已完成 task 的过程记录优先结晶或丢弃。上下文压力优先通过委托发现/验证子代理消化，不以削减治理条款换取空间。
+压缩时优先保留：本文件治理条款要点（会话启动门、验收契约、路由与拆分纪律）、运行准则、用户目标、当前生效契约摘要与 `contract_revision`、活动依赖、剩余预算、未闭合 blocker、待消费证据、当前 wave 并发预算；已完成 task 的过程记录优先结晶或丢弃。上下文压力优先通过委托发现/验证子代理消化。
 
 ## 完成条件
 
