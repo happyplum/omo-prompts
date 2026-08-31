@@ -109,6 +109,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 - **Atlas 并发**：`run_in_background` 默认 true 对上游 NEVER（D-005/D-008）；防劫持条款阻断上游 ulw-execute No-plan bootstrap（D-029）。执行状态体系已回归上游（boulder 续跑 hook、`ledger.jsonl` 账本、DoneClaim→AdversarialVerify 完成契约、验证过即勾选——D-039/SK-015，非相抵项）。
 - **基线预验**：派 quick 档执行子代理超出上游 ulw-plan 只读委托白名单（D-009）。
 - **验证降样**：上游逐 delegation 全套 `lsp_diagnostics`+build+test 与 Manual QA Gate，被本地按比例验证（最小充分、NON-CUMULATIVE）替代（D-006）。
+- **验证分工**（D-045）：上游 Manual Code Review「亲读每个改动文件（NON-NEGOTIABLE）」与 verify-personally 哲学被本地分层验收替代——简单验收=父级亲跑具名验收命令（保留 verify-with-your-own-tools 锚点）+ `explore` 只读事实核查；高风险=新会话独立验证子代理五 gate 全套；裁决始终归父级。系 D-006 验证降样的执行分工延伸，与 D-039「其余父级验证」的分工以本条为准。
 
 ### 上游提示词探查顺序
 
