@@ -364,6 +364,12 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
 - 决策（2026-08-31 用户指令「给 Atlas 增加权限，允许他再次对任务进行拆分」）：`atlas.md`「原子化与并发」新增**执行期再拆分**条款——Atlas 可将计划 task 再次拆分为多个子派发（派生 task_id 如 `T4a`/`T4b`，各按委托契约六段派发与独立验收），**无需先走 REMAP、不改计划正文**；边界：子派发写域互斥且并集不超出原 task 写域，原 task 验收条目全部通过后才勾选 checkbox（checkbox/todo/boulder 仍以计划 task 为粒度），拆分决策与子派发清单 append ledger 入账；改变计划拓扑（task 数量、依赖或 owner 归属写入计划正文）仍属 REMAP。与「必须先 REMAP」条的分工：后者针对 task 边界无效（计划缺陷，含多个 owner family），本条针对计划合法但执行粒度需更细的场景。
 - 验收：`atlas.md`「原子化与并发」含再拆分条款且与 REMAP 边界无冲突。
 
+### D-044 路由判定勘察前置（explore 定性流程）
+
+- 状态：`active`
+- 决策（2026-08-31 用户裁决「要让 Atlas 严格按照路由去选择相应执行层，执行前用 explore 扫描判断任务所属类型」；系 D-042 的流程化补强）：`atlas.md`「派发前置·路由解析」增补——无计划推荐、或交付物性质不明/候选 category 不止一个时，**先派后台 `explore` 勘察该 task 触及的代码面与交付物性质**，以勘察证据按 `omo-adaptive-execution`「Category 选择」定档并把结论随委托入账；不以标题措辞或触碰文件面推断。共享流程定义在 skills 仓 SK-018（路由决策顺序第 5 步证据化），atlas.md 只承载执行纪律。
+- 验收：`atlas.md` 路由解析含勘察前置与入账要求；`omo-adaptive-execution` 路由决策顺序第 5 步含领域 category 证据判定与 explore 前置。
+
 ## 已废弃决策
 
 ### S-001 本地优先级声明
