@@ -82,7 +82,7 @@
 - 一个 task 包含两个以上可独立失败、独立验收的 owner 或 failure family 时**必须先 REMAP**；不能用「中间态无法通过 workspace 全量门禁」证明不可拆——全量门禁属于 integration/checkpoint，owner task 用定向验证闭合。
 - **执行期再拆分**：Atlas 可将计划 task 再次拆分为多个子派发（派生 task_id 如 `T4a`/`T4b`，各按委托契约六段派发与独立验收），无需先走 REMAP、不改计划正文；子派发写域互斥且并集不超出原 task 写域，原 task 验收条目全部通过后才勾选 checkbox（checkbox/todo/boulder 仍以计划 task 为粒度），拆分决策与子派发清单 append ledger 入账。改变计划拓扑（task 数量、依赖或 owner 归属写入计划正文）仍属 REMAP。
 - 路由下限与无效路由按 `omo-adaptive-execution`：普通有界实现默认 `unspecified-low`、机械局部 `quick`；高价路由需 `WHY_NOT_LOWER_COST`，独立 ready 写入任务前台执行需 `WHY_NOT_PARALLEL`。
-- cohort 派发：同一 ready cohort 各派独立子代理，按并发预算分批、同批同一回合发出、默认 `run_in_background=true`。
+- **并行盘点与 cohort 派发**：每波启动与每次补位派发前，先盘点当前就绪集（硬前驱满足、写域互斥、接口决策明确——WAVE-READY 判据按 `omo-adaptive-execution`），把其中互不依赖的 task 作为一组**在同一回合并行发出**（各派独立子代理、按并发预算分批、默认 `run_in_background=true`）；执行期 REMAP 或再拆分后重算就绪集再派发。就绪集有多个成员时不得无证据退化为逐个串行派发——串行仅限真实依赖（后继消费前驱产物、共享写域或未冻结接口）；逐 task 验证节奏（验证过即勾选）不受影响，验收逐个做、派发并行发。
 
 ## 工作区与集成
 
