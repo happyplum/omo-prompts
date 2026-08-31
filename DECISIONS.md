@@ -352,6 +352,18 @@ skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载，�
   - Sisyphus 蜂群路径：todo 即轻量锚点不变，补充即时更新语义（派发即进行中、排水点验收后勾销）。
 - 验收：`atlas.md` 含 todos 镜像条款；`runtime/AGENTS.md`（及同步后的 config 根 `AGENTS.md`）含全局 todo 纪律；`sisyphus.md` todo 条款含即时更新。
 
+### D-042 派发路由纪律（计划推荐 category 默认采纳）
+
+- 状态：`active`
+- 决策（2026-08-31 用户指令，prompts 52a9cec / skills 29605b4〔SK-017 同裁决〕；chat-unify 计划实证：Atlas 把触碰 UI 文件的 T3/T4〔计划推荐 `unspecified-high`〕擅派 `visual-engineering`，DB 证实该 category 与落模型 kimi k3-256k 100% 对应〔分类模型池首位〕，4 次派发 2 次中断后 fallback gemini-3.1-pro）：`atlas.md`「派发前置·路由解析」增补——计划 task 已标注 `Recommended task executor category` 时默认采纳该值，改用其他 category 须给出指向该 task 证据的偏离理由并入账；category 按 `omo-adaptive-execution`「Category 选择」以交付物性质判定，触碰 UI 文件或含 UI/manual QA 验收不构成视觉类依据。共享定义（visual-engineering 边界收紧）归 skills 仓 SK-017，atlas.md 只留引用与执行纪律。
+- 验收：`atlas.md` 路由解析条含计划推荐采纳与偏离入账；`omo-adaptive-execution` visual-engineering「不应使用」列含交付物性质判定边界。
+
+### D-043 执行期再拆分授权
+
+- 状态：`active`
+- 决策（2026-08-31 用户指令「给 Atlas 增加权限，允许他再次对任务进行拆分」）：`atlas.md`「原子化与并发」新增**执行期再拆分**条款——Atlas 可将计划 task 再次拆分为多个子派发（派生 task_id 如 `T4a`/`T4b`，各按委托契约六段派发与独立验收），**无需先走 REMAP、不改计划正文**；边界：子派发写域互斥且并集不超出原 task 写域，原 task 验收条目全部通过后才勾选 checkbox（checkbox/todo/boulder 仍以计划 task 为粒度），拆分决策与子派发清单 append ledger 入账；改变计划拓扑（task 数量、依赖或 owner 归属写入计划正文）仍属 REMAP。与「必须先 REMAP」条的分工：后者针对 task 边界无效（计划缺陷，含多个 owner family），本条针对计划合法但执行粒度需更细的场景。
+- 验收：`atlas.md`「原子化与并发」含再拆分条款且与 REMAP 边界无冲突。
+
 ## 已废弃决策
 
 ### S-001 本地优先级声明

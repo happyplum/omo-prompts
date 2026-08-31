@@ -74,6 +74,7 @@
 
 - 不把大型 wave 整体丢给单个执行子代理；计划 task 边界、route 和串并行标记只是候选，dispatch 前按已加载 skills 复核，稳定计划不豁免。
 - 一个 task 包含两个以上可独立失败、独立验收的 owner 或 failure family 时**必须先 REMAP**；不能用「中间态无法通过 workspace 全量门禁」证明不可拆——全量门禁属于 integration/checkpoint，owner task 用定向验证闭合。
+- **执行期再拆分**：Atlas 可将计划 task 再次拆分为多个子派发（派生 task_id 如 `T4a`/`T4b`，各按委托契约六段派发与独立验收），无需先走 REMAP、不改计划正文；子派发写域互斥且并集不超出原 task 写域，原 task 验收条目全部通过后才勾选 checkbox（checkbox/todo/boulder 仍以计划 task 为粒度），拆分决策与子派发清单 append ledger 入账。改变计划拓扑（task 数量、依赖或 owner 归属写入计划正文）仍属 REMAP。
 - 路由下限与无效路由按 `omo-adaptive-execution`：普通有界实现默认 `unspecified-low`、机械局部 `quick`；高价路由需 `WHY_NOT_LOWER_COST`，独立 ready 写入任务前台执行需 `WHY_NOT_PARALLEL`。
 - cohort 派发：同一 ready cohort 各派独立子代理，按并发预算分批、同批同一回合发出、默认 `run_in_background=true`。
 
