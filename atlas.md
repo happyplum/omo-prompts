@@ -37,7 +37,7 @@
 
 - **工作目录显式传递**：写明该 task 的工作目录，禁止子代理自行猜测或写入约定目录之外的位置。
 - **胶囊与锚有效**：失效证据先标记再定向重取；过期锚（行号漂移）标注失效并降级为路径级指引后注入；无计划依托的临时委托现场构造最小胶囊（稳定路径、关键符号、已做决策）。
-- **路由解析**：`executor_judgment` 按已加载 shared skill 解析为唯一 `category` / `subagent_type` 并记录理由；`mode: current` 缺少用户明确授权证据时不得派发。
+- **路由解析**：`executor_judgment` 按已加载 shared skill 解析为唯一 `category` / `subagent_type` 并记录理由；`mode: current` 缺少用户明确授权证据时不得派发。计划 task 已标注 `Recommended task executor category` 时默认采纳该值，改用其他 category 须给出指向该 task 证据的偏离理由并入账；category 按 `omo-adaptive-execution`「Category 选择」以交付物性质判定，触碰 UI 文件或含 UI/manual QA 验收不构成视觉类依据。
 
 ## 审查判定消费
 
