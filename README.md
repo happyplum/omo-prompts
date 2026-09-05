@@ -12,7 +12,7 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 - `hephaestus.md` → 单目标自主深度编码增强
 - `momus.md` → 证据驱动、原子化与并行路线校验、可收敛复审的计划审核
 - `oracle.md` → 按需只读的架构与调试顾问
-- `metis.md` → 预规划意图与执行期边界分析
+- `metis.md` → 意图分析、定向提问与目的差异分析（目的着重点/描述清晰度/符合度）
 - `DECISIONS.md` → 用户长期需求、当前决策与已废弃方向
 - `runtime/AGENTS.md` → 全局治理规则的可提交源文件
 - `scripts/sync-agents.ps1` → 将 `runtime/AGENTS.md` 同步到运行时 `../AGENTS.md`
@@ -51,13 +51,13 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 
 | 文件 | 作用 |
 |------|------|
-| `prometheus.md` | 在上游计划契约内补充需求溯源、owner/failure-family 原子化证据、三类执行拓扑、计划分级（轻量/完整）、路由初标、验收 checkpoint 与 workspace lane 契约；计划审查默认不送审，完成后只提供三选项（直接执行 / Momus 单审 / Oracle 循环→Momus 循环） |
+| `prometheus.md` | 在上游计划契约内补充需求溯源、owner/failure-family 原子化证据、三类执行拓扑、计划分级（轻量/完整）、路由初标、目的核对显式入口（metis）、验收 checkpoint 与 workspace lane 契约；计划审查默认不送审，完成后只提供三选项（直接执行 / Momus 单审 / Oracle 循环→Momus 循环） |
 | `atlas.md` | 回归上游执行状态体系（boulder 续跑 hook、`ledger.jsonl` 账本、DoneClaim→AdversarialVerify 完成契约、验证过即勾选），补充 execution-only 边界（含无计划新需求处置与角色劫持防护）、审查判定消费（tdd 注入 / split REMAP / route preflight 采纳 + review_verdict 入账）、契约三级裁决、并发预算与工作区集成裁决 |
 | `sisyphus.md` | 强化小团队 Leader 的轻量混合执行：简单自改（定向操作不污染上下文）、蜂群滑动并发（依赖就绪集单批爆发 + 滑动补位、运行中+未验收 ≤6）、统一回归验收（少量自修 / 量大派修）与经济路由 |
 | `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
 | `momus.md` | 在官方 Reference Validation、Executability、Critical Blockers、QA Scenario Executability 四类审查内，使用原子化、拓扑、工作区和上下文胶囊作为证据判据；附 tdd / split / route 三类执行判定（verdict 附件，直通执行期）；不新增 blocker 类别或本地复审上限 |
 | `oracle.md` | 资深架构师纯职：制定架构方案与必要技术细节、搜索技术盲点、给出可落地建议；抑制细枝末节和投机性安全冗余 |
-| `metis.md` | 以委托指明的问题域为边界分析意图与盲点；每轮最多 3 个定向问题，续问结合回答收敛至定位清晰 |
+| `metis.md` | 以委托指明的问题域为边界分析意图与盲点；每轮最多 3 个定向问题，续问结合回答收敛至定位清晰；目的差异分析（目的着重点/描述清晰度/符合度）仅以委托附带证据为界，输入不足 fail-closed 返回所需清单 |
 | `DECISIONS.md` | 记录用户长期需求、兼容原则、可观察验收和已废弃决策，防止 prompt 行为回退 |
 | `runtime/AGENTS.md` | 全局治理规则的可提交源文件 |
 | `scripts/sync-agents.ps1` | 生成并校验运行时 `../AGENTS.md` |
@@ -128,6 +128,6 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 | atlas | openai/gpt-5.6-terra | ✅ bundle 提取：default / gemini / glm 三变体（terra 专属未提取，以 default 为基线参照） | `ulw-execute` |
 | oracle | openai/gpt-5.6-sol | ✅ bundle 提取：单一正文（文中写 based on GPT-5.5，gpt-5.6 专属变体是否存在待核） | — |
 | sisyphus | zhipuai-coding-plan/glm-5.3 | ✅ bundle 提取：glm-5-2 role 块 / default identity 块 / 动态完整版（glm-5.3 实际组装文本未确证） | `ulw-execute` |
-| metis | zhipuai-coding-plan/glm-5.3 | ❌ 未探查 | — |
+| metis | zhipuai-coding-plan/glm-5.3 | ✅ `metis-k27.md`（K2-7 变体，基线快照） | — |
 
 模型绑定变化后，按新绑定重新探查明文变体，并在上表更新探明边界。
