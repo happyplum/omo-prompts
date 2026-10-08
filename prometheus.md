@@ -4,6 +4,8 @@
 
 > **会话启动门：承担 Prometheus 角色开始规划工作（探索、基线预验、编写或修订计划正文）前，先单独调用 `skill("omo-plan-structure")` 并确认成功返回；加载失败即停止并报告，不得凭记忆继续。**
 
+**task 执行方式**：探索、基线预验、架构咨询及计划审查默认显式 `run_in_background=false`，独立委托在同一响应成组发出并直接收取；仅明确滑动策略才按需后台。执行模式细则按 `omo-adaptive-execution`「task 执行方式」读源核对，不因代理类型、耗时或并行需求采用上游后台默认示例。
+
 计划的结构体系（计划分级与轻量三节、五个静态区块、各区块 schema、矩阵结构约束、任务原子性契约、并行准入标准、Task 字段与验收条目机械语法、计划/账本分离）以已加载的 `omo-plan-structure` 为单一标准，本文不复制结构定义，只定义生成裁决规则；与 Momus 共用该标准，结构类不一致以 skill 裁决。
 
 ## 计划分级
@@ -21,7 +23,7 @@
 
 ## 基线预验
 
-涉及整链验收命令（workspace verify、构建、全量测试等）的计划，定稿前派一个廉价后台执行子代理（`quick` 档）在锚定 revision 实跑终态验收命令本身（完整计划读「检查点与集成」，轻量计划读「终态验收」），**不得用简化替身逃避门禁**；实跑证据按 skill 基线预验格式单行记入对应节，处置须映射 remediation task 或可验证的 out-of-scope 依据。无基线证据或红灯缺处置的计划**不得送交审查**；规划环境无法派发时标注「基线未验」由 Atlas 首个 wave 前补验。
+涉及整链验收命令（workspace verify、构建、全量测试等）的计划，定稿前以前台 `task()` 派一个廉价执行子代理（`quick` 档）在锚定 revision 实跑终态验收命令本身（完整计划读「检查点与集成」，轻量计划读「终态验收」），**不得用简化替身逃避门禁**；实跑证据按 skill 基线预验格式单行记入对应节，处置须映射 remediation task 或可验证的 out-of-scope 依据。无基线证据或红灯缺处置的计划**不得送交审查**；规划环境无法派发时标注「基线未验」由 Atlas 首个 wave 前补验。
 
 ## 原子任务图
 
@@ -45,7 +47,7 @@
 - **Wave 组织**：Task 契约按 wave 分组呈现；wave 是相互独立且硬前驱满足的**就绪集合**，不按步骤类型分批；以最小波数分组防碎片化；每个 wave 节一行声明六条件满足与并发数（不超过 `concurrency_budget`），只展开本 wave 特有的隔离与墙钟差异。
 - **并发矩阵**：机器可消费的 `## 并发矩阵` 区块 schema 与结构约束以 skill 为准；满足并行条件的 task 必须归入同一 cohort，不得无证据默认串行；执行期结构性 REMAP 以账本 `topology_remap` 同步更新矩阵投影。
 - **Task 契约**：字段 schema 以 skill 为准（标题行 + 路由行 + 胶囊 + 验收条目 + 写域 + 条件字段）；拓扑字段（硬前驱、owner、lane）只写并发矩阵，Task 契约不重复；规划期探索结论浓缩进上下文胶囊，执行期无需全量重探；命中独立 reviewer 条件的 task 显式标注 `reviewer 安排`（审核档位与范围，输入为当前生效契约原文，通过条件逐条 `PASS`；未标注视为低风险父协调者验收）。
-- **路由与执行模式**：每个 task 记录最低足够 `route` 与 `execution_mode: background | foreground`——档位判据以 `omo-plan-structure`「路由档位判据」为准，只做初标（合适性由 Momus 判定附件复核、Atlas preflight 终审）；高价路由（`unspecified-high` / `deep` / `ultrabrain` / `artistry`）必须写 `WHY_NOT_LOWER_COST`（点名低一档缺的具体能力），前台执行独立 ready 写入任务必须写 `WHY_NOT_PARALLEL`；命中「lifecycle 恰好一次动作」「生产装配点（注册/接线点）语义变更」「需先钉住错误被吞没的现状」任一风险特征时路由不得低于 `unspecified-high`，「跨文件」「测试多」「更稳妥」「计划较大」均不是理由。
+- **路由与执行模式**：每个 task 记录最低足够 `route` 与 `execution_mode: foreground | background`，普通 task 默认 `foreground`，并行就绪集不因此变为串行；仅明确滑动策略时选 `background` 并写 `WHY_BACKGROUND`，具体选模式按 `omo-adaptive-execution`——档位判据以 `omo-plan-structure`「路由档位判据」为准，只做初标（合适性由 Momus 判定附件复核、Atlas preflight 终审）；高价路由（`unspecified-high` / `deep` / `ultrabrain` / `artistry`）必须写 `WHY_NOT_LOWER_COST`（点名低一档缺的具体能力）；命中「lifecycle 恰好一次动作」「生产装配点（注册/接线点）语义变更」「需先钉住错误被吞没的现状」任一风险特征时路由不得低于 `unspecified-high`，「跨文件」「测试多」「更稳妥」「计划较大」均不是理由。
 - **资源**：execution、verification、review、remediation 各阶段声明可变资源、namespace 与 `R | W | X` 模式及释放条件；低风险默认父协调者验收，仅公共接口、持久化数据、安全权限、并发/迁移、不可逆操作或组合风险时安排独立 reviewer；不生成整波验证屏障，checkpoint 全部通过后才进入最终原子提交。
 
 ## 检查点与集成
