@@ -8,7 +8,7 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 
 - `prometheus.md` → 大型任务的探索与规划增强
 - `atlas.md` → 大型任务的可靠执行增强
-- `sisyphus.md` → 小团队 Leader 的简单自改 + 蜂群滑动并发、统一回归验收与上下文防污染
+- `sisyphus.md` → 小团队 Leader 的简单自改 + 前台批次并发、可选蜂群滑动、统一回归验收与上下文防污染
 - `hephaestus.md` → 单目标自主深度编码增强
 - `momus.md` → 证据驱动、原子化与并行路线校验、可收敛复审的计划审核
 - `oracle.md` → 按需只读的架构与调试顾问
@@ -29,7 +29,8 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 并发权威规则由 shared skills（`omo-adaptive-execution`）承载，按路径分两种节奏：
 
 - **计划路径（Atlas/矩阵）——预算波次制**：默认最低成本单一 owner；独立产出/失败/验收 + 写入互斥 + 环境隔离 + 接口冻结 + 真实关键路径收益才进 parallel wave；有向依赖用 pipeline，共享核心不变量、未冻结接口、循环依赖或整体验收用 single-owner。Wave 是派发 epoch 而非验证屏障；并发预算口径（运行中写入 worker + 已完成未验收产物，**默认 3**、**隔离充分时可至 4**、计划 `concurrency_budget` 为**计划路径唯一覆盖入口**）与验收/reviewer 细则见 `atlas.md`。
-- **日常路径（Sisyphus）——蜂群滑动并发**：互不依赖、写域不重叠的 ready 任务按依赖就绪集单批爆发（后台派发），单个完成即释放额度滑动补位（运行中 + 未验收 ≤ 6），验收集中在排水点、高风险即验，细则见 `sisyphus.md`；写域互斥、命名依赖串行、共享推理不拆为两路径共用硬边界。
+- **日常路径（Sisyphus）——前台批次优先**：互不依赖、写域不重叠的 ready 任务同一响应成批前台派发并直接收取；仅明确滑动需求时按需后台，完成并验收后释放额度补位（运行中 + 未验收 ≤ 6），细则见 `sisyphus.md`；写域互斥、命名依赖串行、共享推理不拆为两路径共用硬边界。两路径的执行模式均以 `omo-adaptive-execution` 为单一来源。
+- **后台完成先收取（D-050）**：实际完成通知中的单个任务优先领取，不等整批、wave 末或排水点；多项已完成可同批收取，验证后再释放额度补位，其他任务继续运行。具体收取规则由 `omo-adaptive-execution`「task 执行方式」单一维护，前台默认不变。
 - `INTEGRATE` 是本地状态；`integration task` 由唯一 integration owner 在 integration workspace 中执行，完成后进入官方 `Final Wave`——二者共同构成唯一全局收敛阶段，但不是同一对象。
 
 ### 技术债
@@ -53,7 +54,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 |------|------|
 | `prometheus.md` | 在上游计划契约内补充需求溯源、owner/failure-family 原子化证据、三类执行拓扑、计划分级（轻量/完整）、路由初标、目的核对显式入口（metis）、验收 checkpoint 与 workspace lane 契约；计划审查默认不送审，完成后只提供三选项（直接执行 / Momus 单审 / Oracle 循环→Momus 循环） |
 | `atlas.md` | 回归上游执行状态体系（boulder 续跑 hook、`ledger.jsonl` 账本、DoneClaim→AdversarialVerify 完成契约、验证过即勾选），补充 execution-only 边界（含无计划新需求处置与角色劫持防护）、审查判定消费（tdd 注入 / split REMAP / route preflight 采纳 + review_verdict 入账）、契约三级裁决、并发预算与工作区集成裁决 |
-| `sisyphus.md` | 强化小团队 Leader 的轻量混合执行：简单自改（定向操作不污染上下文）、蜂群滑动并发（依赖就绪集单批爆发 + 滑动补位、运行中+未验收 ≤6）、统一回归验收（少量自修 / 量大派修）与经济路由 |
+| `sisyphus.md` | 强化小团队 Leader 的轻量混合执行：简单自改（定向操作不污染上下文）、默认前台成批并发与显式可选滑动（运行中+未验收 ≤6）、统一回归验收（少量自修 / 量大派修）与经济路由 |
 | `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
 | `momus.md` | 在官方 Reference Validation、Executability、Critical Blockers、QA Scenario Executability 四类审查内，使用原子化、拓扑、工作区和上下文胶囊作为证据判据；附 tdd / split / route 三类执行判定（verdict 附件，直通执行期）；不新增 blocker 类别或本地复审上限 |
 | `oracle.md` | 资深架构师纯职：制定架构方案与必要技术细节、搜索技术盲点、给出可落地建议；抑制细枝末节和投机性安全冗余 |
@@ -106,7 +107,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 
 - **计划工件体制**：不经上游 `ulw-plan` scaffold、计划存 `.omo/plans/`（上游计划工位，Momus 输入契约与 `/ulw-execute` 由此识别——D-036/SK-013 对齐，scaffold 豁免见 `omo-plan-structure`）；上游规划期 draft 恢复点无本地对应物，为已知缺口。
 - **审查触发**：上游 UNCLEAR 自动送审、high-accuracy 修饰词当轮强制送审与「执行还是高精度审查」交付问句均不予执行，触发权只在用户三选项（D-026/D-030；D-035 行为级覆盖，真实会话曾自动发起双审）。
-- **Atlas 并发**：`run_in_background` 默认 true 对上游 NEVER（D-005/D-008）；防劫持条款阻断上游 ulw-execute No-plan bootstrap（D-029）。执行状态体系已回归上游（boulder 续跑 hook、`ledger.jsonl` 账本、DoneClaim→AdversarialVerify 完成契约、验证过即勾选——D-039/SK-015，非相抵项）。
+- **task 执行模式（D-049）**：普通 task 显式 `run_in_background=false`，独立就绪任务仍同批并发；仅明确滑动策略才按需后台。已取代 D-005/D-008 等条目中的后台默认和前台例外理由，不以角色或任务类型恢复上游后台默认示例。Atlas 防劫持条款仍阻断上游 ulw-execute No-plan bootstrap（D-029）；boulder、`ledger.jsonl`、逐 task 验收体系不变。
 - **基线预验**：派 quick 档执行子代理超出上游 ulw-plan 只读委托白名单（D-009）。
 - **验证降样**：上游逐 delegation 全套 `lsp_diagnostics`+build+test 与 Manual QA Gate，被本地按比例验证（最小充分、NON-CUMULATIVE）替代（D-006）。
 - **验证分工**（D-045）：上游 Manual Code Review「亲读每个改动文件（NON-NEGOTIABLE）」与 verify-personally 哲学被本地分层验收替代——简单验收=父级亲跑具名验收命令（保留 verify-with-your-own-tools 锚点）+ `explore` 只读事实核查；高风险=新会话独立验证子代理五 gate 全套；裁决始终归父级。系 D-006 验证降样的执行分工延伸，与 D-039「其余父级验证」的分工以本条为准。
