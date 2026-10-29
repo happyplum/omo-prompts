@@ -58,7 +58,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 | `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
 | `momus.md` | 在官方 Reference Validation、Executability、Critical Blockers、QA Scenario Executability 四类审查内，使用原子化、拓扑、工作区和上下文胶囊作为证据判据；附 tdd / split / route 三类执行判定（verdict 附件，直通执行期）；不新增 blocker 类别或本地复审上限 |
 | `oracle.md` | 资深架构师纯职：制定架构方案与必要技术细节、搜索技术盲点、给出可落地建议；抑制细枝末节和投机性安全冗余 |
-| `metis.md` | 以委托指明的问题域为边界分析意图与盲点；每轮最多 3 个定向问题，续问结合回答收敛至定位清晰；目的差异分析（目的着重点/描述清晰度/符合度）仅以委托附带证据为界，输入不足 fail-closed 返回所需清单 |
+| `metis.md` | 以委托指明的问题域为边界分析意图与盲点；提问数量不限，按需结合回答明确开发目标和边界；目的差异分析（目的着重点/描述清晰度/符合度）仅以委托附带证据为界，输入不足 fail-closed 返回所需清单 |
 | `DECISIONS.md` | 记录用户长期需求、兼容原则、可观察验收和已废弃决策，防止 prompt 行为回退 |
 | `runtime/AGENTS.md` | 全局治理规则的可提交源文件 |
 | `scripts/sync-agents.ps1` | 生成并校验运行时 `../AGENTS.md` |
