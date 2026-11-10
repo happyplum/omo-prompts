@@ -39,14 +39,16 @@ oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本
 
 ## 全局 AGENTS 同步
 
-修改全局治理规则时，先编辑 `runtime/AGENTS.md`，再运行同步脚本生成 OpenCode 实际加载的 `../AGENTS.md`：
+先编辑维护源 `runtime/AGENTS.md`，再运行同步脚本生成 OpenCode 加载的 `../AGENTS.md` 并校验。
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 ```
 
-同步脚本使用逐字复制，不添加 header、不创建 symlink；`-Check` 使用 SHA256 校验源文件与运行时文件完全一致。运行中的 OpenCode 会话已加载旧 instruction，规则变更后需要重启会话才会完整生效。
+脚本逐字复制，`-Check` 用 SHA256 核对维护源和 OpenCode 副本。本机 OMO 的 `~/.omo/agent/AGENTS.md` 与 OpenCode 副本共用硬链接，运行脚本后再核对 OMO 的 SHA256。
+
+Codex 的 `~/.codex/AGENTS.md` 和 Pi 的 `~/.pi/agent/AGENTS.md` 分别同步本次变更的公共条款，逐条核对并保留各端专属规则。验证加载时使用新会话。
 
 ## 文件列表
 
