@@ -1,136 +1,69 @@
 # oh-my-openagent 提示词集
 
-oh-my-openagent 的本地 prompt 仓库。这里维护角色增强 prompt 文本，负责定义规划端、执行端与中小任务端的提示词边界。
+`oh-my-openagent`（OMO）的本地角色增强 prompt 仓库，负责定义规划端、执行端、审查端与日常协调端的角色边界，并维护全局 `runtime/AGENTS.md` 的唯一源文件。
 
-## 安装
+## 目录与文件职责
 
-将本目录放置于 OpenCode 配置根目录下的 `prompts/`（例如 `~/.config/opencode/prompts/`）。当前维护需要本地增强的角色，以及全局 `AGENTS.md` 的可提交源文件：
+将本仓库放置于 OpenCode 配置根目录下的 `prompts/`（即 `~/.config/opencode/prompts/`）：
 
-- `prometheus.md` → 大型任务的探索与规划增强
-- `atlas.md` → 大型任务的可靠执行增强
-- `sisyphus.md` → 小团队 Leader 的简单自改 + 前台批次并发、可选蜂群滑动、统一回归验收与上下文防污染
-- `hephaestus.md` → 单目标自主深度编码增强
-- `momus.md` → 证据驱动、原子化与并行路线校验、可收敛复审的计划审核
-- `oracle.md` → 按需只读的架构与调试顾问
-- `metis.md` → 意图分析、定向提问与目的差异分析（目的着重点/描述清晰度/符合度）
-- `DECISIONS.md` → 用户长期需求、当前决策与已废弃方向
-- `runtime/AGENTS.md` → 全局治理规则的可提交源文件
-- `scripts/sync-agents.ps1` → 将 `runtime/AGENTS.md` 同步到运行时 `../AGENTS.md`
+| 文件 | 角色定位与核心职责 |
+|---|---|
+| `prometheus.md` | **大型任务规划**：需求溯源（`core` / `preference`）、轻量/完整计划分级、基线预验、三类执行拓扑、路由初标、显式目的核对入口（`metis`）；写完默认不自动送审，只给用户三选项（直接执行 / Momus 单审 / Oracle→Momus 双审） |
+| `atlas.md` | **大型计划纯编排执行**：对齐上游 `boulder.json`、全量详细 todos、`ledger.jsonl` 账本与 `DoneClaim → AdversarialVerify` 逐 task 验收；补充防角色劫持、Momus 三判定（`tdd` / `split` / `route`）消费、契约三级现场裁决、执行期再拆分、就绪集成组并发与分层验收（简单验收配合 `explore`，高风险派独立新会话跑五 gate） |
+| `sisyphus.md` | **日常任务团队 Leader**：编排为主、已知局部小改自改为辅（视觉/前端一律派 `visual-engineering`）；默认前台成批并发、显式可选蜂群滑动（在途 ≤ 6，单个完成优先领取）、父级统一回归验收、5 条计划触发门槛与 5 级按比例验证 |
+| `hephaestus.md` | **单目标自主深度实现**：围绕单一明确边界目标自主完成探索、实现、验证与 QA，不越界接管多任务协调 |
+| `momus.md` | **计划审核**：严格在官方四类范围内输出 `[OKAY]` / `[REJECT]`（每次最多详列 3 个实质 blocker，清零才放行），并随 verdict 附带逐 task 的 `tdd` / `split` / `route` 三项执行判定直通 Atlas |
+| `oracle.md` | **资深架构师纯职**：制定与当前目标匹配的架构方案、关键技术细节与盲点分析，不做逐行代码挑刺，不把无证据的理论假设变成过度安全冗余 |
+| `metis.md` | **意图分析与目的差异核对**：梳理未敲定意图并针对关键歧义提问（不限题数、重要在前）；显式触发目的差异分析（目的着重点 / 描述清晰度 / 符合度）时仅按附带原话与原文证据出报告，缺材料直接 fail-closed 退回清单 |
+| `DECISIONS.md` | 记录用户长期需求、演进裁决（`D-001` ~ `D-056`）与已废弃方向（`S-001` ~ `S-005`），防止角色行为回退 |
+| `runtime/AGENTS.md` | 全局执行规范的可提交维护源 |
+| `scripts/sync-agents.ps1` | 将 `runtime/AGENTS.md` 同步到 `../AGENTS.md` 并用 SHA256 校验一致性 |
 
-## 设计定位
+## 设计与协作边界
 
-- `prompts/` 是本地角色增强面，维护角色边界、职责分工、入口门禁和 handoff 契约；同时维护全局 `AGENTS.md` 的可提交源文件。
-- [`DECISIONS.md`](DECISIONS.md) 是用户长期需求与本仓决策的权威入口；修改角色行为前先核对其中的 `active` / `superseded` 状态，避免回退到已废弃方向。skills 仓的 skill 行为决策由该仓自己的 DECISIONS.md 独立承载。
-- 通用治理、task 契约和可复用规范由 `../skills/`、运行时 skills 与 `runtime/AGENTS.md` 承载；`../AGENTS.md` 是由同步脚本生成的运行时副本。
-- `~/.omo/omo.jsonc` 只使用 `file://` 形式的 `prompt_append`；每个 agent 的追加内容放在同名 Markdown 文件中，便于独立回顾、审查和 Git 记录。
+- **本地 `prompt_append` 定位**：`~/.omo/omo.jsonc` 通过 `file://` 引用本仓同名 Markdown 文件，只补充上游未覆盖且与上游兼容的稳定角色行为，不声明「本地优先」或替换上游主流程。
+- **派发方持有协议，响应方只管判断标准**：跨角色调度协议（审查轮次、会话续用、委托模板、移交规则）只写在派发方（计划审查 → `omo-plan-review` skill，计划执行 → `atlas.md`，日常协调 → `sisyphus.md`）；响应方角色（`oracle.md`、`metis.md`、`momus.md`）只写自身判断标准，不写「被谁在什么阶段调用」的分支语句。
+- **角色文件自包含、说直白工程话**：角色 prompt 正文不引用 `DECISIONS.md` 编号（`D-0xx`），不写空洞免责声明或生造黑话，直接写可执行的判断规则与边界。
+- **与 `../skills/` 分工**：跨角色复用的计划结构 schema（`omo-plan-structure`）、审查循环协议（`omo-plan-review`）、自适应执行路由（`omo-adaptive-execution`）和 Atlas 执行约束（`omo-atlas-execution-constraints`）维护在 `~/.config/opencode/skills/`，本仓角色 prompt 通过会话启动门加载消费，不重复抄写大段 schema。
 
-### 有界并行边界（索引）
+### 双路径并发节奏速览
 
-并发权威规则由 shared skills（`omo-adaptive-execution`）承载，按路径分两种节奏：
+两路径通用硬边界：**写域互斥、命名依赖串行、共享同一推理链/接口不硬拆**；执行与结果收取细则以 `omo-adaptive-execution`「task 执行方式」为单一来源：
 
-- **计划路径（Atlas/矩阵）——预算波次制**：默认最低成本单一 owner；独立产出/失败/验收 + 写入互斥 + 环境隔离 + 接口冻结 + 真实关键路径收益才进 parallel wave；有向依赖用 pipeline，共享核心不变量、未冻结接口、循环依赖或整体验收用 single-owner。Wave 是派发 epoch 而非验证屏障；并发预算口径（运行中写入 worker + 已完成未验收产物，**默认 3**、**隔离充分时可至 4**、计划 `concurrency_budget` 为**计划路径唯一覆盖入口**）与验收/reviewer 细则见 `atlas.md`。
-- **日常路径（Sisyphus）——前台批次优先**：互不依赖、写域不重叠的 ready 任务同一响应成批前台派发并直接收取；仅明确滑动需求时按需后台，完成并验收后释放额度补位（运行中 + 未验收 ≤ 6），细则见 `sisyphus.md`；写域互斥、命名依赖串行、共享推理不拆为两路径共用硬边界。两路径的执行模式均以 `omo-adaptive-execution` 为单一来源。
-- **后台完成先收取（D-050）**：实际完成通知中的单个任务优先领取，不等整批、wave 末或排水点；多项已完成可同批收取，验证后再释放额度补位，其他任务继续运行。具体收取规则由 `omo-adaptive-execution`「task 执行方式」单一维护，前台默认不变。
-- `INTEGRATE` 是本地状态；`integration task` 由唯一 integration owner 在 integration workspace 中执行，完成后进入官方 `Final Wave`——二者共同构成唯一全局收敛阶段，但不是同一对象。
+- **计划路径（Prometheus → Atlas）**：预算波次制。每波前盘点就绪集，在并发预算内（运行中写入 worker + 已完成未勾选 task，**默认 3、隔离充分至 4、计划 `concurrency_budget` 为唯一覆盖入口**）同回合前台成组并发派发；逐 task 验证通过即勾选。
+- **日常路径（Sisyphus）**：默认前台按就绪集成批派发并直接收取；仅明确选用滑动策略时才设 `run_in_background=true`（在途上限 **运行中 + 未验收 ≤ 6**）。
+- **后台结果优先领取（D-050）**：在显式滑动后台模式下，收到单个真实完成通知后下一回合立即优先领取并验证，验证通过即释放额度补位，不等整批或整波跑完。
 
-### 技术债
+## 全局 `AGENTS.md` 同步方式
 
-- `tech-debt`：上下文压缩的 100K token 水位目标无可观察的 token 信号，压缩时机依赖代理自估，属平台层缺口。
-
-## 全局 AGENTS 同步
-
-先编辑维护源 `runtime/AGENTS.md`，再运行同步脚本生成 OpenCode 加载的 `../AGENTS.md` 并校验。
+先编辑 `runtime/AGENTS.md`，再运行同步脚本更新 OpenCode 加载的 `../AGENTS.md` 并核对（本机 `~/.omo/agent/AGENTS.md` 与 `../AGENTS.md` 共用 NTFS HardLink）：
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\sync-agents.ps1 -Check
 ```
 
-脚本逐字复制，`-Check` 用 SHA256 核对维护源和 OpenCode 副本。本机 OMO 的 `~/.omo/agent/AGENTS.md` 与 OpenCode 副本共用硬链接，运行脚本后再核对 OMO 的 SHA256。
+Codex 的 `~/.codex/AGENTS.md` 与 Pi 的 `~/.pi/agent/AGENTS.md` 在公共条款变更时按需同步公共底座，并保留各自专属的多代理/蜂群规则。
 
-Codex 的 `~/.codex/AGENTS.md` 和 Pi 的 `~/.pi/agent/AGENTS.md` 分别同步本次变更的公共条款，逐条核对并保留各端专属规则。验证加载时使用新会话。
+## 上游兼容基线与已裁决相抵点
 
-## 文件列表
+- **对齐基线**：`code-yeongyu/oh-my-openagent` **5.0.0-beta.24**（`/start-work` 已更名为 `/ulw-execute`，账本路径为 `.omo/ulw-execute/ledger.jsonl`）；OpenCode `anomalyco/opencode@5501ffd2`。
+- **已裁决相抵点（D-033，核对上游更新时作为合法豁免依据）**：
+  1. **计划存放与生成**：计划统一存放在上游识别的 `.omo/plans/`（D-036），但不走上游 `ulw-plan` scaffold（结构由 `omo-plan-structure` 约束）。
+  2. **送审触发权收归用户（D-035）**：上游 UNCLEAR 自动送审、`high accuracy` 修饰词强制送审及交付二选一问句均不执行，统一由计划写完后的用户三选项触发。
+  3. **task 默认前台成批（D-049/D-050）**：普通委托显式 `run_in_background=false` 同回合成组并发，仅显式滑动策略才用后台且单个完成优先领取；Atlas 防劫持条款阻断上游无计划自动 bootstrap（D-029）。
+  4. **基线预验（D-009）**：规划期派 `quick` 子代理实跑终态验收命令，作为对上游 `ulw-plan` 只读白名单的有意豁免。
+  5. **按比例验证与分层验收（D-006/D-045）**：替代上游每次委托全套 `lsp_diagnostics + build + test` 与逐文件亲读——简单验收由 Atlas 亲跑验收命令 + `explore` 只读核查事实，高风险任务派新会话独立验证子代理跑五 gate 全套，最终裁决始终归父级。
 
-| 文件 | 作用 |
-|------|------|
-| `prometheus.md` | 在上游计划契约内补充需求溯源、owner/failure-family 原子化证据、三类执行拓扑、计划分级（轻量/完整）、路由初标、目的核对显式入口（metis）、验收 checkpoint 与 workspace lane 契约；计划审查默认不送审，完成后只提供三选项（直接执行 / Momus 单审 / Oracle 循环→Momus 循环） |
-| `atlas.md` | 回归上游执行状态体系（boulder 续跑 hook、`ledger.jsonl` 账本、DoneClaim→AdversarialVerify 完成契约、验证过即勾选），补充 execution-only 边界（含无计划新需求处置与角色劫持防护）、审查判定消费（tdd 注入 / split REMAP / route preflight 采纳 + review_verdict 入账）、契约三级裁决、并发预算与工作区集成裁决 |
-| `sisyphus.md` | 强化小团队 Leader 的轻量混合执行：简单自改（定向操作不污染上下文）、默认前台成批并发与显式可选滑动（运行中+未验收 ≤6）、统一回归验收（少量自修 / 量大派修）与经济路由 |
-| `hephaestus.md` | 强化单目标自主深度实现；不接管多任务协调 |
-| `momus.md` | 在官方 Reference Validation、Executability、Critical Blockers、QA Scenario Executability 四类审查内，使用原子化、拓扑、工作区和上下文胶囊作为证据判据；附 tdd / split / route 三类执行判定（verdict 附件，直通执行期）；不新增 blocker 类别或本地复审上限 |
-| `oracle.md` | 资深架构师纯职：制定架构方案与必要技术细节、搜索技术盲点、给出可落地建议；抑制细枝末节和投机性安全冗余 |
-| `metis.md` | 以委托指明的问题域为边界分析意图与盲点；提问数量不限，按需结合回答明确开发目标和边界；目的差异分析（目的着重点/描述清晰度/符合度）仅以委托附带证据为界，输入不足 fail-closed 返回所需清单 |
-| `DECISIONS.md` | 记录用户长期需求、兼容原则、可观察验收和已废弃决策，防止 prompt 行为回退 |
-| `runtime/AGENTS.md` | 全局治理规则的可提交源文件 |
-| `scripts/sync-agents.ps1` | 生成并校验运行时 `../AGENTS.md` |
+### 上游基础 Prompt 探查顺序
 
-## 维护规范
+核对上游基础 prompt 时，先读 `~/.omo/omo.jsonc` 确认各角色当前绑定的模型，再到 `~/.cache/opencode/packages/oh-my-openagent@beta/node_modules/oh-my-openagent/dist/` 下匹配对应模型专属变体（不以 default 版冒充运行时实际变体）：
 
-持续生效的仓库维护约定直接记录于此；[`DECISIONS.md`](DECISIONS.md) 只保存用户裁决记录。
-
-### Prompt 写作
-
-- 每份 Markdown 只有一个描述文件用途的 H1，其余章节保持递增层级（markdownlint MD025 / MD041 clean）。
-- 角色 prompt 只保留必要的准则、参考、约束与防漂移规则；禁止写入元声明、免责声明、兼容性声明及「本节只补充」「上游规则继续有效」等无行为约束力的表述。
-- **行为 prompt 自包含**：角色文件正文不引用 `DECISIONS.md` 编号或仓库内部记账；规则的约束力来自条文本身，消费 prompt 的模型不知道也不需要知道决策编号。溯源记录只存在于 `DECISIONS.md`。
-- **派发方持有协议，角色 prompt 只承载判定标准**：跨角色协作协议（审查模式标注、轮次编排、会话续用策略、胶囊构造、阻断标准注入、移交规则、输出格式契约）只写在派发方的编排文件（计划审查→`omo-plan-review` skill，执行验收→`atlas.md`，日常委托→`sisyphus.md`），派发时写进 `task()` 委托 prompt；响应方角色 prompt 不含模式协议、调用阶段分支、轮次词汇、调度逻辑或对其他文件的元声明，只保留自身判定标准与对委托所附内容的消费；一个角色一个职业，调用场景由派发方在委托中写明意图。同一规则禁止双份维护，发现重复时保留派发方、从响应方删除。自查口诀：这条行为是「我自己怎么判断」还是「别人怎么调度我」——后者移到派发方。
-
-### 提交与生效
-
-- prompt、skill 或运行时规则修改完成并验证后，按独立意图原子提交并推送；审查/讨论轮次进行中**不逐轮提交**，全部审查完毕（用户确认）后一次成型，避免过程修订噪音进入历史。
-- 配置时文件（prompt、agent、skill、config）变更后完全退出并重启 OpenCode 才生效；仓库保持 clean 且与 upstream 同步，新会话读取到新版本。
-
-## 边界
-
-- 不在本仓库复制 `skills/` 中的完整治理规则；那是上层同级 `../skills/` 的职责。
-- `runtime/AGENTS.md` 是全局治理规则的维护源；`../AGENTS.md` 只作为 OpenCode 运行时加载副本存在，不直接提交到本仓库。
-- 本地 `prompt_append` 只使用 `file://` 引用；需要本地稳定增强的 agent 才配置对应 Markdown 文件，未配置的 agent 直接使用 OMO base prompt。
-- 文件型 `prompt_append` 只补充上游未覆盖且与上游兼容的稳定角色行为；**不得声明本地优先或替换上游工作流**。发现冲突时调整或删除本地条款，并同步 [`DECISIONS.md`](DECISIONS.md)。
-- 不以 agent 覆盖率或 skill 数量作为添加 prompt 的理由；**只有经审查确认的本地行为差异才新增文件**。
-- 新增长期行为前先写入 `DECISIONS.md`；上游已定义的行为不在本地重复，已废弃决策**不得重新引入**。
-- 若 prompt 边界变化影响根配置事实、执行模型或长期治理结论，需同步 `~/.omo/omo.jsonc`、`runtime/AGENTS.md` 中受影响的事实与相关 durable memory，并重新生成 `../AGENTS.md`；未受影响的载体不机械更新。
-
-## 上游兼容基线
-
-本地 append 已对照以下固定版本审查：
-
-- Oh My OpenAgent：`code-yeongyu/oh-my-openagent@e676fef9`（5.0.0-beta.12）
-- 2026-08-26 实测：`auto_update` 一天内将实装缓存自 beta.12 静默升至 **5.0.0-beta.24**（本地缓存无 commit 锚点，以 version 为准；beta.24 将 `/start-work` 更名 `/ulw-execute`，见 D-040）；上游正文快照与重提取标记见配置根 `docs/omo/upstream-baseline/`，协同手册见 `docs/omo/upstream-playbook.md`（均不入本仓）
-- OpenCode：`anomalyco/opencode@550d1ffd24718454925c4636e937878f0274de48`
-
-2026-08-20 核对：运行缓存曾滞留 `5.0.0-beta.7`（`auto_update` 未自动刷新缓存目录），已手动刷新至 `5.0.0-beta.12`，重启后生效（见「维护规范」）；上游行为核对一律以实装版本为准。
-
-当前 `~/.omo/omo.jsonc` 启用 `auto_update`。上游更新后需重新核对 Prometheus/Atlas/Momus 基础 prompt、`ulw-plan`、category 路由和 `/stop-continuation`；兼容基线未更新前，不假定本地 append 仍与新契约一致。
-
-### 已裁决相抵点（D-033）
-
-上游不可改，以下与上游的相抵点均经决策裁决；上游版本核对时以本清单为豁免依据，不得当作待删冲突：
-
-- **计划工件体制**：不经上游 `ulw-plan` scaffold、计划存 `.omo/plans/`（上游计划工位，Momus 输入契约与 `/ulw-execute` 由此识别——D-036/SK-013 对齐，scaffold 豁免见 `omo-plan-structure`）；上游规划期 draft 恢复点无本地对应物，为已知缺口。
-- **审查触发**：上游 UNCLEAR 自动送审、high-accuracy 修饰词当轮强制送审与「执行还是高精度审查」交付问句均不予执行，触发权只在用户三选项（D-026/D-030；D-035 行为级覆盖，真实会话曾自动发起双审）。
-- **task 执行模式（D-049）**：普通 task 显式 `run_in_background=false`，独立就绪任务仍同批并发；仅明确滑动策略才按需后台。已取代 D-005/D-008 等条目中的后台默认和前台例外理由，不以角色或任务类型恢复上游后台默认示例。Atlas 防劫持条款仍阻断上游 ulw-execute No-plan bootstrap（D-029）；boulder、`ledger.jsonl`、逐 task 验收体系不变。
-- **基线预验**：派 quick 档执行子代理超出上游 ulw-plan 只读委托白名单（D-009）。
-- **验证降样**：上游逐 delegation 全套 `lsp_diagnostics`+build+test 与 Manual QA Gate，被本地按比例验证（最小充分、NON-CUMULATIVE）替代（D-006）。
-- **验证分工**（D-045）：上游 Manual Code Review「亲读每个改动文件（NON-NEGOTIABLE）」与 verify-personally 哲学被本地分层验收替代——简单验收=父级亲跑具名验收命令（保留 verify-with-your-own-tools 锚点）+ `explore` 只读事实核查；高风险=新会话独立验证子代理五 gate 全套；裁决始终归父级。系 D-006 验证降样的执行分工延伸，与 D-039「其余父级验证」的分工以本条为准。
-
-### 上游提示词探查顺序
-
-探查上游角色基础 prompt 时，**先匹配当前模型绑定对应的专属变体**，不要只看 default 版：
-
-1. 先读 `~/.omo/omo.jsonc` 确定各 agent 当前绑定的模型；
-2. 在 `~/.cache/opencode/packages/oh-my-openagent@beta/node_modules/oh-my-openagent/dist/agents/` 下按模型找专属变体（文件名含模型后缀，或 `createXAgent(model)` / `getXPrompt(model)` 按模型分流）；default 版只用于核对兼容性，不作为运行时行为基线；
-3. 明文内嵌的变体（d.ts 中 `= "..."`）可直接读取；其余角色的正文以字符串字面量内嵌于 `dist/index.js` 捆绑包，可按标记（如 `You are Atlas`）取字节偏移后提取解码；完全无文本形态的才改以 `ulw-plan` / `ulw-execute` skill 与 hook 契约为镜像核对。
-
-已探明边界（2026-08-25，bundle 提取法更新）：
-
-| 角色 | 当前绑定 | 明文提取 | 镜像核对 |
+| 角色 | 当前绑定模型 | 上游变体来源 | 镜像核对契约 |
 |---|---|---|---|
-| momus | openai/gpt-5.6-sol | ✅ `momus-gpt-5-6.d.ts`（default 备用 `momus.d.ts`） | — |
-| prometheus | zhipuai-coding-plan/glm-5.3 | ✅ bundle 提取：consultant / planner（Ultrawork 注入）两变体 | `ulw-plan` |
-| atlas | openai/gpt-5.6-terra | ✅ bundle 提取：default / gemini / glm 三变体（terra 专属未提取，以 default 为基线参照） | `ulw-execute` |
-| oracle | openai/gpt-5.6-sol | ✅ bundle 提取：单一正文（文中写 based on GPT-5.5，gpt-5.6 专属变体是否存在待核） | — |
-| sisyphus | zhipuai-coding-plan/glm-5.3 | ✅ bundle 提取：glm-5-2 role 块 / default identity 块 / 动态完整版（glm-5.3 实际组装文本未确证） | `ulw-execute` |
-| metis | zhipuai-coding-plan/glm-5.3 | ✅ `metis-k27.md`（K2-7 变体，基线快照） | — |
-
-模型绑定变化后，按新绑定重新探查明文变体，并在上表更新探明边界。
+| `momus` | `openai/gpt-5.6-sol` | `momus-gpt-5-6.d.ts`（备用 `momus.d.ts`） | — |
+| `prometheus` | `zhipuai-coding-plan/glm-5.3` | `dist/index.js` 提取 consultant / planner 两变体 | `ulw-plan` |
+| `atlas` | `openai/gpt-5.6-terra` | `dist/index.js` 提取 default / gemini / glm 三变体 | `ulw-execute` |
+| `oracle` | `openai/gpt-5.6-sol` | `dist/index.js` 提取单一正文 | — |
+| `sisyphus` | `zhipuai-coding-plan/glm-5.3` | `dist/index.js` 提取 role / identity / 动态组装块 | `ulw-execute` |
+| `metis` | `zhipuai-coding-plan/glm-5.3` | `metis-k27.md` 基线快照 | — |
